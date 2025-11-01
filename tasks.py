@@ -19,4 +19,4 @@ class BlueFolderTasks(BlueFolderClient):
         """
         Retrieves a specific task by ID.
         """
-        return self.get("task/get", params={"id": task_id})
+        return super().get("task/get", params={"id": task_id})
