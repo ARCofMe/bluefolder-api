@@ -1,22 +1,9 @@
-"""
-Module for interacting with the BlueFolder Materials API.
-Provides functionality to retrieve materials from the BlueFolder API.
-"""
-
 from .base import BlueFolderBase
 
+class Materials(BlueFolderBase):
+    def list_materials(self, customer_id=None):
+        payload = {"CustomerId": customer_id} if customer_id else {}
+        return self._request("POST", "Materials/List", payload)
 
-class BlueFolderMaterials(BlueFolderBase):
-    """Handles Material-related interactions with the BlueFolder API."""
-
-    def get(self, filters: dict = None) -> list[dict]:
-        """
-        Retrieve materials from the BlueFolder API.
-
-        Args:
-            filters (dict, optional): A dictionary of filter parameters for the request.
-
-        Returns:
-            list[dict]: A list of materials.
-        """
-        return self.client.get("materials", params=filters or {})
+    def get_material_by_id(self, material_id):
+        return self._request("POST", "Materials/Get", {"Id": material_id})

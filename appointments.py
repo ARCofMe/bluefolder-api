@@ -1,24 +1,13 @@
-from typing import Dict, Optional, Any
 from .base import BlueFolderBase
 
+class Appointments(BlueFolderBase):
+    def list_appointments(self, start_date=None, end_date=None):
+        payload = {}
+        if start_date:
+            payload["StartDate"] = start_date
+        if end_date:
+            payload["EndDate"] = end_date
+        return self._request("POST", "Appointments/List", payload)
 
-class BlueFolderAppointments(BlueFolderBase):
-    """
-    Handles API calls related to appointments.
-    """
-
-    def list(self, start_date: str, end_date: str, user_id: Optional[int] = None) -> Any:
-        if not start_date or not end_date:
-            raise ValueError("Start and end dates must be provided.")
-        payload = {
-            "StartDate": start_date,
-            "EndDate": end_date
-        }
-        if user_id:
-            payload["UserID"] = user_id
-        return self._request("POST", "Appointments/GetList", payload)
-
-    def get(self, appointment_id: int) -> Any:
-        if not appointment_id:
-            raise ValueError("Appointment ID is required.")
-        return self._request("POST", "Appointments/Get", {"ID": appointment_id})
+    def get_appointment_by_id(self, appointment_id):
+        return self._request("POST", "Appointments/Get", {"Id": appointment_id})

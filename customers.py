@@ -1,16 +1,8 @@
-from typing import Any
 from .base import BlueFolderBase
 
+class Customers(BlueFolderBase):
+    def list_customers(self, active_only=True):
+        return self._request("POST", "Customers/List", {"ActiveOnly": active_only})
 
-class BlueFolderCustomers(BlueFolderBase):
-    """
-    Retrieve BlueFolder customer data.
-    """
-
-    def list(self) -> Any:
-        return self._request("POST", "Customers/GetList")
-
-    def get(self, customer_id: int) -> Any:
-        if not customer_id:
-            raise ValueError("Customer ID is required.")
-        return self._request("POST", "Customers/Get", {"ID": customer_id})
+    def get_customer_by_id(self, customer_id):
+        return self._request("POST", "Customers/Get", {"Id": customer_id})
