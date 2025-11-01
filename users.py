@@ -19,4 +19,4 @@ class BlueFolderUsers(BlueFolderClient):
         """
         Retrieves a specific user by ID.
         """
-        return self.get("user/get", params={"id": user_id})
+        return super().get("user/get", params={"id": user_id})

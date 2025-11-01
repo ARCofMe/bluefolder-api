@@ -19,4 +19,4 @@ class BlueFolderEquipment(BlueFolderClient):
         """
         Retrieves a specific equipment item by ID.
         """
-        return self.get("equipment/get", params={"id": equipment_id})
+        return super().get("equipment/get", params={"id": equipment_id})
