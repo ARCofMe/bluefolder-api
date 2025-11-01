@@ -1,22 +1,16 @@
-# users.py
+from typing import Any
+from .base import BlueFolderBase
 
-from .base import BlueFolderClient
 
-
-class BlueFolderUsers(BlueFolderClient):
+class BlueFolderUsers(BlueFolderBase):
     """
-    Handles interaction with the Users endpoint of the BlueFolder API.
+    Access user information from BlueFolder.
     """
 
-    def list(self, **params):
-        """
-        Returns a list of users.
-        Optional params may include filters like isActive, userType, etc.
-        """
-        return self.get("user/list", params=params)
+    def list(self) -> Any:
+        return self._request("POST", "Users/GetList")
 
-    def get(self, user_id: int):
-        """
-        Retrieves a specific user by ID.
-        """
-        return super().get("user/get", params={"id": user_id})
+    def get(self, user_id: int) -> Any:
+        if not user_id:
+            raise ValueError("User ID is required.")
+        return self._request("POST", "Users/Get", {"ID": user_id})

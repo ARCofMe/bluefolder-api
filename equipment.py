@@ -1,22 +1,18 @@
-# equipment.py
+from typing import Dict, Any
+from .base import BlueFolderBase
 
-from .base import BlueFolderClient
 
-
-class BlueFolderEquipment(BlueFolderClient):
+class BlueFolderEquipment(BlueFolderBase):
     """
-    Handles interaction with the Equipment endpoint of the BlueFolder API.
+    Manages BlueFolder Equipment endpoints.
     """
 
-    def list(self, **params):
-        """
-        Returns a list of equipment records.
-        Optional filters may include customerId, workOrderId, etc.
-        """
-        return self.get("equipment/list", params=params)
+    def get(self, equipment_id: int) -> Any:
+        if not equipment_id:
+            raise ValueError("Equipment ID is required.")
+        return self._request("POST", "Equipment/Get", {"ID": equipment_id})
 
-    def get(self, equipment_id: int):
-        """
-        Retrieves a specific equipment item by ID.
-        """
-        return super().get("equipment/get", params={"id": equipment_id})
+    def list(self, customer_id: int) -> Any:
+        if not customer_id:
+            raise ValueError("Customer ID is required.")
+        return self._request("POST", "Equipment/GetList", {"CustomerID": customer_id})

@@ -1,100 +1,71 @@
-"""
-Encapsulates low-level HTTP logic for BlueFolder API.
-Handles authentication, retries, and standardized error handling.
-"""
-
 import os
-import time
 import logging
-import requests
-from typing import Optional, Dict, Any, Union
+from dotenv import load_dotenv
 
+from .appointments import BlueFolderAppointments
+from .users import BlueFolderUsers
+from .customers import BlueFolderCustomers
+from .tasks import BlueFolderTasks
+from .equipment import BlueFolderEquipment
+from .base import BlueFolderBase
+
+# Load from .env if available
+load_dotenv()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 class BlueFolderClient:
     """
-    A reusable, low-level client for communicating with the BlueFolder API.
+    Central client for accessing all BlueFolder API domains.
     """
 
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://app.bluefolder.com/api/3.0/"):
-        """
-        Initializes the client with an API key and optional custom base URL.
-
-        Args:
-            api_key (str): Your BlueFolder API key. If not passed, it is read from the BLUEFOLDER_API_KEY env variable.
-            base_url (str): The base URL for BlueFolder’s API.
-        """
+    def __init__(self, api_key: str = None, base_url: str = None):
         self.api_key = api_key or os.getenv("BLUEFOLDER_API_KEY")
+        self.base_url = base_url or os.getenv("BLUEFOLDER_BASE_URL", "https://app.bluefolder.com/api/2.0/json/")
+
         if not self.api_key:
-            raise ValueError("Missing BlueFolder API key. Set BLUEFOLDER_API_KEY or pass one in.")
+            raise EnvironmentError("BLUEFOLDER_API_KEY must be set in environment or passed to the client.")
 
-        self.base_url = base_url.rstrip("/")
-        self.session = requests.Session()
-        self.session.headers.update({
-            "X-API-KEY": self.api_key,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        })
+        logger.info("Initializing BlueFolder client")
 
-    def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None, retries: int = 3, backoff: float = 1.0) -> Union[Dict, list]:
-        """
-        Perform a GET request to the BlueFolder API with retry logic.
+        # Shared base object
+        self._base = BlueFolderBase(api_key=self.api_key, base_url=self.base_url)
 
-        Args:
-            endpoint (str): API endpoint path (e.g., "users", "appointments").
-            params (dict): Optional query parameters.
-            retries (int): Number of retries on failure.
-            backoff (float): Delay in seconds between retries.
+        # Lazy-loaded domain clients
+        self._appointments = None
+        self._users = None
+        self._customers = None
+        self._tasks = None
+        self._equipment = None
 
-        Returns:
-            Union[dict, list]: Parsed JSON response.
+    @property
+    def appointments(self) -> BlueFolderAppointments:
+        if not self._appointments:
+            self._appointments = BlueFolderAppointments(self.api_key, self.base_url)
+        return self._appointments
 
-        Raises:
-            RuntimeError: If the request fails after retries.
-        """
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        attempt = 0
+    @property
+    def users(self) -> BlueFolderUsers:
+        if not self._users:
+            self._users = BlueFolderUsers(self.api_key, self.base_url)
+        return self._users
 
-        while attempt < retries:
-            try:
-                response = self.session.get(url, params=params, timeout=10)
-                response.raise_for_status()
-                return response.json()
-            except requests.exceptions.RequestException as e:
-                attempt += 1
-                logger.warning(f"GET attempt {attempt} failed for {url}: {e}")
-                if attempt >= retries:
-                    raise RuntimeError(f"GET request to {url} failed after {retries} attempts.") from e
-                time.sleep(backoff)
+    @property
+    def customers(self) -> BlueFolderCustomers:
+        if not self._customers:
+            self._customers = BlueFolderCustomers(self.api_key, self.base_url)
+        return self._customers
 
-    def post(self, endpoint: str, data: Dict[str, Any], retries: int = 3, backoff: float = 1.0) -> Dict[str, Any]:
-        """
-        Perform a POST request to the BlueFolder API with retry logic.
+    @property
+    def tasks(self) -> BlueFolderTasks:
+        if not self._tasks:
+            self._tasks = BlueFolderTasks(self.api_key, self.base_url)
+        return self._tasks
 
-        Args:
-            endpoint (str): API endpoint path.
-            data (dict): Payload to send.
-            retries (int): Number of retries on failure.
-            backoff (float): Delay in seconds between retries.
-
-        Returns:
-            dict: Parsed JSON response.
-
-        Raises:
-            RuntimeError: If the request fails after retries.
-        """
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
-        attempt = 0
-
-        while attempt < retries:
-            try:
-                response = self.session.post(url, json=data, timeout=10)
-                response.raise_for_status()
-                return response.json()
-            except requests.exceptions.RequestException as e:
-                attempt += 1
-                logger.warning(f"POST attempt {attempt} failed for {url}: {e}")
-                if attempt >= retries:
-                    raise RuntimeError(f"POST request to {url} failed after {retries} attempts.") from e
-                time.sleep(backoff)
+    @property
+    def equipment(self) -> BlueFolderEquipment:
+        if not self._equipment:
+            self._equipment = BlueFolderEquipment(self.api_key, self.base_url)
+        return self._equipment

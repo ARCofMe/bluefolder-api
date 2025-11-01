@@ -31,28 +31,6 @@ appointments = api.appointments.list()
 customer = api.customers.get(customer_id=1234)
 ```
 
-### 🔐 Error Handling and Input Validation
-
-This library is built with resilience in mind:
-
-  - All domain modules extend `BlueFolderBase`, which includes:
-  - **Input validation** for filters and parameters.
-  - **Safe wrappers** around HTTP GET requests with consistent return types.
-  - **Clear error messaging** to assist in debugging.
-
-Example:
-
-```python
-from bluefolder_api.users import BlueFolderUsers
-
-users_api = BlueFolderUsers()
-
-try:
-    users = users_api.get(filters={"status": "Active"})
-except RuntimeError as e:
-    print(f"API Error: {e}")
-```
-
 ## 📂 Modules
 
 | Module            | Class Name                 | Description                                 |
@@ -72,31 +50,6 @@ Create a `.env` file in the root directory:
 ```env
 BLUEFOLDER_API_KEY=your_api_key_here
 BLUEFOLDER_ACCOUNT_NAME=your_account_subdomain_here
-```
-
-### 🔒 Robust HTTP Client with Retry Logic
-
-The core HTTP client (`client.py`) includes:
-
-- Automatic retry logic for **GET and POST requests**
-- Customizable retry count and exponential backoff
-- Built-in logging of retry attempts
-- Centralized header setup using API keys from `.env` or constructor
-- Timeout and exception safety
-
-Example usage:
-
-```python
-from bluefolder_api.client import BlueFolderClient
-
-client = BlueFolderClient()
-appointments = client.get("appointments", params={"start": "2025-11-01"})
-```
-
-To customize retries:
-
-```python
-appointments = client.get("appointments", retries=5, backoff=2.0)
 ```
 
 ## 🧪 Testing

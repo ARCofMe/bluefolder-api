@@ -1,57 +1,44 @@
-"""
-Shared base class for all BlueFolder API domain clients.
-Provides common functionality and error handling.
-"""
-
-from typing import Optional, Dict, Any, List
-from .client import BlueFolderClient
+import os
+import requests
+from typing import Optional, Dict, Any
 
 
 class BlueFolderBase:
     """
-    Abstract base class for BlueFolder API domain wrappers.
-    Includes client initialization, input validation, and robust error handling.
+    Base class to handle HTTP interactions with the BlueFolder API.
     """
 
-    def __init__(self, client: Optional[BlueFolderClient] = None) -> None:
-        """
-        Initialize with a shared BlueFolderClient instance.
-        """
-        self.client = client or BlueFolderClient()
+    def __init__(self, api_key: str, base_url: str = "https://app.bluefolder.com/api/2.0/json/"):
+        if not api_key:
+            raise ValueError("API key is required.")
+        self.api_key = api_key
+        self.base_url = base_url
 
-    def validate_filters(self, filters: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Validate filters passed to API requests.
+    def _headers(self) -> Dict[str, str]:
+        return {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
 
-        Args:
-            filters (dict): Filter dictionary.
+    def _request(self, method: str, endpoint: str, payload: Optional[Dict] = None) -> Any:
+        url = os.path.join(self.base_url, endpoint)
+        if not url.startswith("https://"):
+            raise ValueError(f"Invalid URL: {url}")
 
-        Returns:
-            dict: Validated filters.
-        """
-        if filters is None:
-            return {}
+        data = {
+            "APIKEY": self.api_key
+        }
+        if payload:
+            data.update(payload)
 
-        if not isinstance(filters, dict):
-            raise TypeError(f"Filters must be a dict, got {type(filters)}")
-        return filters
-
-    def safe_get(self, endpoint: str, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """
-        Perform a safe GET request with validation and error catching.
-
-        Args:
-            endpoint (str): The BlueFolder API endpoint.
-            filters (dict): Optional dictionary of query filters.
-
-        Returns:
-            list[dict]: API response data.
-        """
         try:
-            validated_filters = self.validate_filters(filters)
-            response = self.client.get(endpoint, params=validated_filters)
-            if not isinstance(response, list):
-                raise ValueError(f"Expected list response, got {type(response)}")
-            return response
-        except Exception as e:
-            raise RuntimeError(f"Failed to fetch from '{endpoint}': {e}") from e
+            response = requests.post(url, json=data, headers=self._headers(), timeout=10)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise RuntimeError(f"API request to {url} failed: {e}") from e
+
+        result = response.json()
+        if "Error" in result:
+            raise RuntimeError(f"API Error: {result['Error']}")
+
+        return result
