@@ -31,6 +31,28 @@ appointments = api.appointments.list()
 customer = api.customers.get(customer_id=1234)
 ```
 
+### 🔐 Error Handling and Input Validation
+
+This library is built with resilience in mind:
+
+  - All domain modules extend `BlueFolderBase`, which includes:
+  - **Input validation** for filters and parameters.
+  - **Safe wrappers** around HTTP GET requests with consistent return types.
+  - **Clear error messaging** to assist in debugging.
+
+Example:
+
+```python
+from bluefolder_api.users import BlueFolderUsers
+
+users_api = BlueFolderUsers()
+
+try:
+    users = users_api.get(filters={"status": "Active"})
+except RuntimeError as e:
+    print(f"API Error: {e}")
+
+
 ## 📂 Modules
 
 | Module            | Class Name                 | Description                                 |
