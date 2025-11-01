@@ -51,7 +51,7 @@ try:
     users = users_api.get(filters={"status": "Active"})
 except RuntimeError as e:
     print(f"API Error: {e}")
-
+```
 
 ## 📂 Modules
 
