@@ -1,83 +1,58 @@
+# bluefolder_api/base.py
+
 import os
+import xml.etree.ElementTree as ET
 import requests
 from dotenv import load_dotenv
-from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, Union
+from typing import Dict, Optional
 
-# Load from .env if available
+# Load environment variables from .env file
 load_dotenv()
 
-class BlueFolderBase(ABC):
-    """
-    Base class for all BlueFolder API modules.
-
-    Handles:
-    - API key management
-    - Base URL validation
-    - Payload construction
-    - POST request dispatch
-    - Basic error handling
-
-    Extend this class in each module to reduce boilerplate and enforce consistency.
-    """
-
-    DEFAULT_BASE_URL = os.getenv("BLUEFOLDER_BASE_URL", "https://app.bluefolder.com/api/2.0/json/")
-
-    def __init__(self, api_key: str, base_url: Optional[str] = None):
-        if not api_key or not isinstance(api_key, str) or not api_key.strip():
-            raise ValueError("A valid BlueFolder API key is required.")
-
-        self.api_key = api_key.strip()
-        self.base_url = base_url.strip() if base_url else self.DEFAULT_BASE_URL
-
-        if not self.base_url.startswith("https://"):
-            raise ValueError(f"Invalid base URL: {self.base_url}")
-
-    def _headers(self) -> Dict[str, str]:
-        return {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
+class BlueFolderBase:
+    def __init__(self, domain: str):
+        self.api_key = os.getenv("BLUEFOLDER_API_KEY")
+        self.account_name = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
+        if not self.api_key or not self.account_name:
+            raise ValueError("Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in environment.")
+        
+        self.domain = domain
+        self.endpoint = f"https://{self.account_name}.bluefolder.com/api/2.0/xml"
+        self.headers = {
+            "Content-Type": "text/xml; charset=utf-8",
+            "SOAPAction": f"https://www.bluefolder.com/api/2.0/{domain}"
         }
 
-    def _build_payload(self, payload: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        data = {"APIKEY": self.api_key}
-        if payload:
-            data.update(payload)
-        return data
+    def _build_request_body(self, action: str, params: Dict) -> str:
+        root = ET.Element("request")
+        action_element = ET.SubElement(root, action)
+        for key, value in params.items():
+            child = ET.SubElement(action_element, key)
+            child.text = str(value)
+        return ET.tostring(root, encoding="utf-8", method="xml").decode()
 
-    def _build_url(self, endpoint: str) -> str:
-        return os.path.join(self.base_url, endpoint)
+    def _parse_response(self, response: requests.Response) -> Dict:
+        if not response.ok:
+            raise Exception(f"HTTP Error {response.status_code}: {response.text}")
+        root = ET.fromstring(response.text)
+        return {child.tag: child.text for child in root.iter() if child is not root}
 
-    def _request(
-        self,
-        method: str,
-        endpoint: str,
-        payload: Optional[Dict[str, Any]] = None,
-        timeout: int = 15,
-    ) -> Union[Dict[str, Any], list]:
-        """
-        Performs a POST request to the BlueFolder API.
-        Handles basic error parsing and raises exceptions on failure.
-        """
-        url = self._build_url(endpoint)
-        data = self._build_payload(payload)
+    def call_api(self, action: str, params: Optional[Dict] = None) -> Dict:
+        body = self._build_request_body(action, params or {})
+        response = requests.post(self.endpoint, headers=self.headers, data=body)
+        return self._parse_response(response)
 
-        try:
-            response = requests.post(url, json=data, headers=self._headers(), timeout=timeout)
-            response.raise_for_status()
-            json_data = response.json()
+    def get(self, params: Dict) -> Dict:
+        return self.call_api("Get", params)
 
-            if "Error" in json_data:
-                raise RuntimeError(f"BlueFolder API Error: {json_data['Error']}")
+    def get_list(self, params: Optional[Dict] = None) -> Dict:
+        return self.call_api("GetList", params or {})
 
-            return json_data
-        except requests.RequestException as e:
-            raise RuntimeError(f"BlueFolder API Request failed: {str(e)}") from e
+    def create(self, params: Dict) -> Dict:
+        return self.call_api("Create", params)
 
-    @abstractmethod
-    def get_endpoint_name(self) -> str:
-        """
-        Returns the name of the endpoint module (e.g., 'Tasks', 'Users').
-        Used for logging or CLI feedback. Must be implemented by subclasses.
-        """
-        pass
+    def update(self, params: Dict) -> Dict:
+        return self.call_api("Update", params)
+
+    def delete(self, params: Dict) -> Dict:
+        return self.call_api("Delete", params)
