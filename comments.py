@@ -1,6 +1,6 @@
 # bluefolder_api/comments.py
 
-from .base import BlueFolderBase
+from base import BlueFolderBase
 
 class BlueFolderComments(BlueFolderBase):
     def __init__(self):

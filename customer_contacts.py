@@ -1,6 +1,6 @@
 # bluefolder_api/customer_contacts.py
 
-from .base import BlueFolderBase
+from base import BlueFolderBase
 
 class BlueFolderCustomerContacts(BlueFolderBase):
     def __init__(self):

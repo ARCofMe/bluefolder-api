@@ -1,6 +1,10 @@
 # tests/conftest.py
 
 import pytest
+import sys, os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 
 @pytest.fixture(autouse=True)
 def patch_env(monkeypatch):

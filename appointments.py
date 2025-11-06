@@ -1,6 +1,6 @@
 # bluefolder_api/appointments.py
 
-from .base import BlueFolderBase
+from base import BlueFolderBase
 
 class BlueFolderAppointments(BlueFolderBase):
     def __init__(self):

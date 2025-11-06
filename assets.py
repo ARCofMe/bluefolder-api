@@ -1,6 +1,6 @@
 # bluefolder_api/assets.py
 
-from .base import BlueFolderBase
+from base import BlueFolderBase
 
 class BlueFolderAssets(BlueFolderBase):
     def __init__(self):

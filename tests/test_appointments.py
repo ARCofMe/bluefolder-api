@@ -1,9 +1,9 @@
 import unittest
-from appointments import Appointments
+from appointments import BlueFolderAppointments
 
 class TestAppointments(unittest.TestCase):
     def setUp(self):
-        self.client = Appointments(api_key="dummy_key")
+        self.client = BlueFolderAppointments()
 
     def test_instance(self):
-        self.assertIsInstance(self.client, Appointments)
+        self.assertIsInstance(self.client, BlueFolderAppointments)

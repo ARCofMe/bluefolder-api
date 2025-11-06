@@ -2,7 +2,7 @@
 
 import xml.etree.ElementTree as ET
 import pytest
-from ..base import BlueFolderBase
+from base import BlueFolderBase
 
 class DummyDomain(BlueFolderBase):
     def __init__(self):

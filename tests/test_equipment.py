@@ -1,9 +1,9 @@
 import unittest
-from equipment import Equipment
+from equipment import BlueFolderEquipment
 
 class TestEquipment(unittest.TestCase):
     def setUp(self):
-        self.client = Equipment(api_key="dummy_key")
+        self.client = BlueFolderEquipment()
 
     def test_instance(self):
-        self.assertIsInstance(self.client, Equipment)
+        self.assertIsInstance(self.client, BlueFolderEquipment)

@@ -1,9 +1,9 @@
 import unittest
-from materials import Materials
+from materials import BlueFolderMaterials
 
 class TestMaterials(unittest.TestCase):
     def setUp(self):
-        self.client = Materials(api_key="dummy_key")
+        self.client = BlueFolderMaterials()
 
     def test_instance(self):
-        self.assertIsInstance(self.client, Materials)
+        self.assertIsInstance(self.client, BlueFolderMaterials)

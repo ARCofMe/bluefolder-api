@@ -1,6 +1,6 @@
 # bluefolder_api/labor.py
 
-from .base import BlueFolderBase
+from base import BlueFolderBase
 
 class BlueFolderLabor(BlueFolderBase):
     def __init__(self):

@@ -1,7 +1,7 @@
 # tests/test_service_requests.py
 
 import xml.etree.ElementTree as ET
-from ..service_requests import BlueFolderServiceRequests
+from service_requests import BlueFolderServiceRequests
 
 def test_service_requests_inherits_domain(fake_response):
     sr = BlueFolderServiceRequests()

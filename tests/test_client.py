@@ -1,7 +1,7 @@
 # tests/test_client.py
 
-from ..client import BlueFolderClient
-from ..service_requests import BlueFolderServiceRequests
+from client import BlueFolderClient
+from service_requests import BlueFolderServiceRequests
 
 def test_client_inits_all_domains():
     client = BlueFolderClient()
