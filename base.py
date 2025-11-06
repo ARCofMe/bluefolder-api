@@ -1,58 +1,73 @@
 # bluefolder_api/base.py
 
 import os
+import logging
 import xml.etree.ElementTree as ET
-import requests
+from abc import ABC
 from dotenv import load_dotenv
-from typing import Dict, Optional
+import requests
 
-# Load environment variables from .env file
 load_dotenv()
 
-class BlueFolderBase:
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+
+class BlueFolderBase(ABC):
     def __init__(self, domain: str):
         self.api_key = os.getenv("BLUEFOLDER_API_KEY")
-        self.account_name = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
-        if not self.api_key or not self.account_name:
-            raise ValueError("Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in environment.")
-        
+        self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
         self.domain = domain
-        self.endpoint = f"https://{self.account_name}.bluefolder.com/api/2.0/xml"
-        self.headers = {
-            "Content-Type": "text/xml; charset=utf-8",
-            "SOAPAction": f"https://www.bluefolder.com/api/2.0/{domain}"
-        }
 
-    def _build_request_body(self, action: str, params: Dict) -> str:
+        if not self.api_key or not self.account:
+            raise ValueError(
+                "Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env"
+            )
+
+        self.url = f"https://{self.account}.bluefolder.com/api/2.0/xml"
+
+    def _build_xml_request(self, method: str, params: dict = None) -> str:
         root = ET.Element("request")
-        action_element = ET.SubElement(root, action)
-        for key, value in params.items():
-            child = ET.SubElement(action_element, key)
-            child.text = str(value)
-        return ET.tostring(root, encoding="utf-8", method="xml").decode()
+        ET.SubElement(root, "method").text = method
+        ET.SubElement(root, "apikey").text = self.api_key
 
-    def _parse_response(self, response: requests.Response) -> Dict:
-        if not response.ok:
-            raise Exception(f"HTTP Error {response.status_code}: {response.text}")
-        root = ET.fromstring(response.text)
-        return {child.tag: child.text for child in root.iter() if child is not root}
+        if params:
+            for key, value in params.items():
+                if value is not None:
+                    ET.SubElement(root, key).text = str(value)
 
-    def call_api(self, action: str, params: Optional[Dict] = None) -> Dict:
-        body = self._build_request_body(action, params or {})
-        response = requests.post(self.endpoint, headers=self.headers, data=body)
-        return self._parse_response(response)
+        return ET.tostring(root, encoding="utf-8", method="xml")
 
-    def get(self, params: Dict) -> Dict:
-        return self.call_api("Get", params)
+    def _post(self, method: str, params: dict = None) -> ET.Element:
+        xml_data = self._build_xml_request(method, params)
+        headers = {"Content-Type": "application/xml"}
 
-    def get_list(self, params: Optional[Dict] = None) -> Dict:
-        return self.call_api("GetList", params or {})
+        logger.debug(
+            f"Sending POST to {self.url} with method: {method} and params: {params}"
+        )
+        response = requests.post(self.url, data=xml_data, headers=headers)
 
-    def create(self, params: Dict) -> Dict:
-        return self.call_api("Create", params)
+        if response.status_code != 200:
+            logger.error(f"Error: {response.status_code} - {response.text}")
+            response.raise_for_status()
 
-    def update(self, params: Dict) -> Dict:
-        return self.call_api("Update", params)
+        try:
+            return ET.fromstring(response.content)
+        except ET.ParseError as e:
+            logger.exception("Failed to parse XML response.")
+            raise RuntimeError("Invalid XML response") from e
 
-    def delete(self, params: Dict) -> Dict:
-        return self.call_api("Delete", params)
+    def get(self, params: dict = None):
+        return self._post("get", params)
+
+    def list(self, params: dict = None):
+        return self._post("list", params)
+
+    def create(self, params: dict):
+        return self._post("create", params)
+
+    def update(self, params: dict):
+        return self._post("update", params)
+
+    def delete(self, params: dict):
+        return self._post("delete", params)
