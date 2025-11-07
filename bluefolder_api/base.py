@@ -7,10 +7,23 @@ from abc import ABC
 from dotenv import load_dotenv
 import requests
 
-load_dotenv()
+# Locate .env file relative to this file or the current working directory
+env_path = os.getenv("BLUEFOLDER_ENV_PATH")  # optional override
+if not env_path:
+    # Try same directory as base.py or its parent
+    here = os.path.dirname(os.path.abspath(__file__))
+    # walk up one directory to project root
+    candidate = os.path.join(os.path.dirname(here), ".env")
+    if os.path.exists(candidate):
+        env_path = candidate
+    else:
+        # fallback: current working directory
+        env_path = os.path.join(os.getcwd(), ".env")
+
+load_dotenv(dotenv_path=env_path)
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class BlueFolderBase(ABC):
@@ -24,11 +37,19 @@ class BlueFolderBase(ABC):
                 "Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env"
             )
 
-        self.url = f"https://{self.account}.bluefolder.com/api/2.0/xml"
+        # Base per-domain URL
+        self.base_url = f"https://{self.account}.bluefolder.com/api/2.0/"
 
-    def _build_xml_request(self, method: str, params: dict = None) -> str:
+    def _build_xml_request(self, params: dict | None = None) -> bytes:
+        """
+        Build the <request> body the way the docs show:
+
+        <request>
+          <apikey>...</apikey>
+          <someParam>...</someParam>
+        </request>
+        """
         root = ET.Element("request")
-        ET.SubElement(root, "method").text = method
         ET.SubElement(root, "apikey").text = self.api_key
 
         if params:
@@ -38,24 +59,48 @@ class BlueFolderBase(ABC):
 
         return ET.tostring(root, encoding="utf-8", method="xml")
 
-    def _post(self, method: str, params: dict = None) -> ET.Element:
-        xml_data = self._build_xml_request(method, params)
-        headers = {"Content-Type": "application/xml"}
+    def _post(self, action: str, xml_data=None, params=None):
+        import xml.etree.ElementTree as ET
+        import base64
+        import logging
+        import requests
 
-        logger.debug(
-            f"Sending POST to {self.url} with method: {method} and params: {params}"
-        )
-        response = requests.post(self.url, data=xml_data, headers=headers)
+        logger = logging.getLogger(__name__)
+
+        # ensure we don't get double slashes
+        url = f"{self.base_url.rstrip('/')}/{self.domain}/{action}.aspx"
+
+        if xml_data is None:
+            xml_data = self._build_xml_request(action, params)
+
+        # BlueFolder expects api_key first, then account name
+        credentials = f"{self.api_key}:{self.account}"
+        token = base64.b64encode(credentials.encode()).decode()
+
+        headers = {
+            "Content-Type": "application/xml",
+            "Authorization": f"Basic {token}",
+        }
+
+        logger.debug(f"POST → {url}\n{xml_data.decode()}")
+        response = requests.post(url, data=xml_data, headers=headers)
+
+        logger.debug(f"Status: {response.status_code}")
+        logger.debug(f"Response:\n{response.text}")
 
         if response.status_code != 200:
-            logger.error(f"Error: {response.status_code} - {response.text}")
+            logger.error(f"Error {response.status_code}: {response.text}")
             response.raise_for_status()
 
         try:
             return ET.fromstring(response.content)
         except ET.ParseError as e:
-            logger.exception("Failed to parse XML response.")
+            logger.error(f"Invalid XML from {url}:\n{response.text}")
             raise RuntimeError("Invalid XML response") from e
+
+
+
+
 
     def get(self, params: dict = None):
         return self._post("get", params)
@@ -64,10 +109,10 @@ class BlueFolderBase(ABC):
         return self._post("list", params)
 
     def create(self, params: dict):
-        return self._post("create", params)
+        return self._post("add", params)
 
     def update(self, params: dict):
-        return self._post("update", params)
+        return self._post("edit", params)
 
-    def delete(self, params: dict):
-        return self._post("delete", params)
+    #def delete(self, params: dict):
+    #    return self._post("delete", params)

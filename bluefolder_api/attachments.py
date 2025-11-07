@@ -1,6 +1,6 @@
 # bluefolder_api/attachments.py
 
-from base import BlueFolderBase
+from .base import BlueFolderBase
 
 class BlueFolderAttachments(BlueFolderBase):
     def __init__(self):

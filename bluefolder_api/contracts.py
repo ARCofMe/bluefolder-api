@@ -1,6 +1,6 @@
 # bluefolder_api/contracts.py
 
-from base import BlueFolderBase
+from .base import BlueFolderBase
 
 class BlueFolderContracts(BlueFolderBase):
     def __init__(self):

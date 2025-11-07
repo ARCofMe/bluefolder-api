@@ -1,6 +1,6 @@
 # bluefolder_api/custom_fields.py
 
-from base import BlueFolderBase
+from .base import BlueFolderBase
 
 class BlueFolderCustomFields(BlueFolderBase):
     def __init__(self):

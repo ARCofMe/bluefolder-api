@@ -1,6 +1,6 @@
 # bluefolder_api/users.py
 
-from base import BlueFolderBase
+from .base import BlueFolderBase
 
 class BlueFolderUsers(BlueFolderBase):
     def __init__(self):

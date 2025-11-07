@@ -1,22 +1,22 @@
 # bluefolder_api/client.py
 
-from appointments import BlueFolderAppointments
-from assignments import BlueFolderAssignments
-from attachments import BlueFolderAttachments
-from comments import BlueFolderComments
-from contracts import BlueFolderContracts
-from custom_fields import BlueFolderCustomFields
-from customer_contacts import BlueFolderCustomerContacts
-from customer_locations import BlueFolderCustomerLocations
-from customers import BlueFolderCustomers
-from equipment import BlueFolderEquipment
-from expenses import BlueFolderExpenses
-from item_lists import BlueFolderItemLists
-from labor import BlueFolderLabor
-from materials import BlueFolderMaterials
-from service_requests import BlueFolderServiceRequests
-from tax_codes import BlueFolderTaxCodes
-from users import BlueFolderUsers
+from .appointments import BlueFolderAppointments
+from .assignments import BlueFolderAssignments
+from .attachments import BlueFolderAttachments
+from .comments import BlueFolderComments
+from .contracts import BlueFolderContracts
+from .custom_fields import BlueFolderCustomFields
+from .customer_contacts import BlueFolderCustomerContacts
+from .customer_locations import BlueFolderCustomerLocations
+from .customers import BlueFolderCustomers
+from .equipment import BlueFolderEquipment
+from .expenses import BlueFolderExpenses
+from .item_lists import BlueFolderItemLists
+from .labor import BlueFolderLabor
+from .materials import BlueFolderMaterials
+from .service_requests import BlueFolderServiceRequests
+from .tax_codes import BlueFolderTaxCodes
+from .users import BlueFolderUsers
 
 
 class BlueFolderClient:
