@@ -1,6 +1,6 @@
 # BlueFolder API (Unofficial Python SDK)
 
-A clean, object-oriented Python wrapper around the [BlueFolder v2.0 API](https://www.bluefolder.com/api),  
+A clean, object-oriented Python wrapper around the BlueFolder v2.0 API,  
 built to simplify service management integrations such as routing extensions, ticket enrichment,  
 and field technician automation.
 
@@ -21,3 +21,243 @@ and field technician automation.
 
 ```bash
 pip install -r requirements.txt
+```
+
+Requirements:
+- Python 3.10+
+- `requests`
+- `python-dotenv`
+- `tenacity` (for retries, optional)
+- `xml.etree.ElementTree` (standard library)
+
+---
+
+## ⚙️ Configuration
+
+Create a `.env` file in your project root:
+
+```env
+BLUEFOLDER_API_KEY=your_api_key_here
+BLUEFOLDER_ACCOUNT_NAME=your_account_name_here
+```
+
+Optionally specify a custom `.env` path via:
+
+```env
+BLUEFOLDER_ENV_PATH=/path/to/.env
+```
+
+---
+
+## 🧱 Architecture Overview
+
+Each BlueFolder domain (Appointments, Assignments, Customers, etc.)  
+extends a common abstract base: `BlueFolderBase`.
+
+```mermaid
+classDiagram
+    class BlueFolderBase {
+        +_build_xml_request()
+        +_post()
+        +list()
+        +get()
+        +create()
+        +update()
+    }
+    BlueFolderBase <|-- BlueFolderAppointments
+    BlueFolderBase <|-- BlueFolderAssignments
+    BlueFolderBase <|-- BlueFolderCustomers
+    BlueFolderBase <|-- BlueFolderServiceRequests
+    BlueFolderBase <|-- BlueFolderLabor
+    BlueFolderBase <|-- BlueFolderMaterials
+    BlueFolderBase <|-- BlueFolderUsers
+```
+
+All domain handlers are instantiated automatically through the main client:
+
+```python
+from bluefolder_api.client import BlueFolderClient
+
+bf = BlueFolderClient()
+
+# Example: List active users
+users = bf.users.list_active()
+print(users)
+
+# Example: Get today’s service requests for a technician
+requests = bf.service_requests.list_for_user_range(
+    user_id=33538043,
+    start_date="2025.11.07 12:00 AM",
+    end_date="2025.11.07 11:59 PM",
+    date_range_type="dateTimeCreated"
+)
+```
+
+---
+
+## 🧩 Domain Coverage
+
+| Domain | Class | Description |
+|---------|--------|-------------|
+| 🕓 **Appointments** | `BlueFolderAppointments` | Pull user appointments for routing or schedule views |
+| 🔧 **Assignments** | `BlueFolderAssignments` | Retrieve technician job assignments per user/date |
+| 📄 **Service Requests** | `BlueFolderServiceRequests` | Core SR data including subject, customer, and address |
+| 👥 **Customers** | `BlueFolderCustomers` | Manage customer records and locations |
+| 🏠 **Customer Locations** | `BlueFolderCustomerLocations` | Retrieve location info for routing/geocoding |
+| 🧰 **Equipment** | `BlueFolderEquipment` | Asset and serial tracking per customer or site |
+| 🧾 **Materials** | `BlueFolderMaterials` | Manage parts and materials attached to SRs |
+| ⏱️ **Labor** | `BlueFolderLabor` | Log and retrieve technician labor entries |
+| 💵 **Expenses** | `BlueFolderExpenses` | Manage mileage/meals/lodging expenses per SR |
+| 📎 **Attachments** | `BlueFolderAttachments` | Upload or retrieve job photos and documents |
+| 💬 **Comments** | `BlueFolderComments` | Add or view job notes and internal comments |
+| 📋 **Contracts** | `BlueFolderContracts` | Customer contract and coverage details |
+| 🧮 **Custom Fields** | `BlueFolderCustomFields` | Retrieve schema of user-defined fields |
+| 🧾 **Item Lists** | `BlueFolderItemLists` | Access item price lists and catalog data |
+| 💰 **Tax Codes** | `BlueFolderTaxCodes` | Retrieve system tax code definitions |
+| 👤 **Users** | `BlueFolderUsers` | Query system users (technicians, dispatchers, etc.) |
+
+---
+
+## 🧠 Usage Examples
+
+### Get Today’s Assignments for a Technician
+
+```python
+from bluefolder_api.client import BlueFolderClient
+from datetime import date
+
+bf = BlueFolderClient()
+
+today = date.today().strftime("%Y.%m.%d")
+assignments = bf.assignments.list_for_user_range(
+    user_id=33538043,
+    start_date=f"{today} 12:00 AM",
+    end_date=f"{today} 11:59 PM",
+    date_range_type="scheduled"
+)
+
+for a in assignments:
+    print(a["assignmentId"], a["serviceRequestId"], a["start"])
+```
+
+---
+
+### Retrieve Enriched Service Request with Customer Location
+
+```python
+bf = BlueFolderClient()
+
+sr_list = bf.service_requests.list_for_user_range(
+    33538043,
+    "2025.11.07 12:00 AM",
+    "2025.11.07 11:59 PM",
+    date_range_type="dateTimeCreated"
+)
+
+for sr in sr_list:
+    locs = bf.customer_locations.get_by_customer_id(sr["customerId"])
+    if not locs:
+        continue
+    loc = locs[0]
+    print(f"{sr['subject']} — {loc['address']}, {loc['city']}")
+```
+
+---
+
+### Add a Material to a Job
+
+```python
+bf.materials.add_to_service_request(
+    service_request_id=91800,
+    item_name="Condenser Fan Motor",
+    quantity=1,
+    unit_price=225.00,
+    description="OEM motor replacement"
+)
+```
+
+---
+
+### Add a Comment to a Service Request
+
+```python
+bf.comments.add_to_service_request(
+    service_request_id=91800,
+    text="Job completed successfully; parts verified.",
+    visible_to_customer=True
+)
+```
+
+---
+
+## 🧩 Integration Example: Routing Manager
+
+The `optimized-routing-extension` project consumes this API to build  
+Google Maps route URLs from BlueFolder assignment data:
+
+```python
+from bluefolder_integration import BlueFolderIntegration
+from routing import generate_google_route
+
+bf = BlueFolderIntegration()
+assignments = bf.get_user_assignments_today(user_id=33538043)
+route_url = generate_google_route(
+    user_id=33538043,
+    origin_address="180 E Hebron Rd, Hebron, ME"
+)
+print(route_url)
+```
+
+---
+
+## 🧱 Project Structure
+
+```text
+bluefolder_api/
+│
+├── base.py                # Common XML builder and HTTP helpers
+├── client.py              # Central client that instantiates all domains
+├── appointments.py
+├── assignments.py
+├── attachments.py
+├── comments.py
+├── contracts.py
+├── custom_fields.py
+├── customer_contacts.py
+├── customer_locations.py
+├── customers.py
+├── equipment.py
+├── expenses.py
+├── item_lists.py
+├── labor.py
+├── materials.py
+├── service_requests.py
+├── tax_codes.py
+└── users.py
+```
+
+---
+
+## 🧰 Contributing
+
+1. Fork the repo and create a new branch.
+2. Add new domain modules by extending `BlueFolderBase`.
+3. Follow existing code style and docstring format.
+4. Submit a pull request with your API logs (if adding new endpoints).
+
+---
+
+## 🧾 License
+
+This SDK is provided under the **MIT License**.  
+It is an independent, unofficial wrapper — not affiliated with BlueFolder, Inc.
+
+---
+
+## 🧭 Versioning
+
+| Version | Date | Notes |
+|----------|------|-------|
+| `1.0.0` | Nov 2025 | Full v2.0 API domain coverage and tested integration with routing |
+| `0.9.0` | Oct 2025 | Added assignments + service request enrichment |
+| `0.8.0` | Sep 2025 | Initial structure and dotenv integration |
