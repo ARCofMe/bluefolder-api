@@ -1,5 +1,11 @@
 # bluefolder_api/client.py
 
+import os
+import requests
+import logging
+from dotenv import load_dotenv
+
+# Domain imports
 from .appointments import BlueFolderAppointments
 from .assignments import BlueFolderAssignments
 from .attachments import BlueFolderAttachments
@@ -18,26 +24,80 @@ from .service_requests import BlueFolderServiceRequests
 from .tax_codes import BlueFolderTaxCodes
 from .users import BlueFolderUsers
 
+# -------------------------------------------------------------------------
+# Load environment
+# -------------------------------------------------------------------------
+load_dotenv()
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 class BlueFolderClient:
+    """
+    Central API client for interacting with all BlueFolder API domains.
+
+    This class manages:
+    - a shared requests.Session for persistent connections
+    - base API URL construction from environment
+    - authentication credentials (API key and account name)
+    - initialization of all domain-specific API handlers
+
+    Environment Variables Required
+    ------------------------------
+    BLUEFOLDER_API_KEY : str
+        Your BlueFolder API key.
+    BLUEFOLDER_ACCOUNT_NAME : str
+        Your BlueFolder account subdomain (e.g., "mycompany" for mycompany.bluefolder.com).
+
+    Example
+    -------
+        >>> from bluefolder_api.client import BlueFolderClient
+        >>> bf = BlueFolderClient()
+        >>> users = bf.users.list()
+        >>> print(users)
+    """
+
     def __init__(self):
-        self.appointments = BlueFolderAppointments()
-        self.assignments = BlueFolderAssignments()
-        self.attachments = BlueFolderAttachments()
-        self.comments = BlueFolderComments()
-        self.contracts = BlueFolderContracts()
-        self.custom_fields = BlueFolderCustomFields()
-        self.customer_contacts = BlueFolderCustomerContacts()
-        self.customer_locations = BlueFolderCustomerLocations()
-        self.customers = BlueFolderCustomers()
-        self.equipment = BlueFolderEquipment()
-        self.expenses = BlueFolderExpenses()
-        self.item_lists = BlueFolderItemLists()
-        self.labor = BlueFolderLabor()
-        self.materials = BlueFolderMaterials()
-        self.service_requests = BlueFolderServiceRequests()
-        self.tax_codes = BlueFolderTaxCodes()
-        self.users = BlueFolderUsers()
+        # Load core credentials
+        self.api_key = os.getenv("BLUEFOLDER_API_KEY")
+        self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
+
+        if not self.api_key or not self.account:
+            raise ValueError("Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env")
+
+        # Build the base API URL once, centrally
+        self.base_url = f"https://{self.account}.bluefolder.com/api/2.0"
+
+        # Create a single persistent HTTP session (shared across all domains)
+        self.session = requests.Session()
+
+        logger.debug(f"Initialized BlueFolderClient with base_url={self.base_url}")
+
+        # Domain clients (each inherits this client for shared context)
+        self.appointments = BlueFolderAppointments(client=self)
+        self.assignments = BlueFolderAssignments(client=self)
+        self.attachments = BlueFolderAttachments(client=self)
+        self.comments = BlueFolderComments(client=self)
+        self.contracts = BlueFolderContracts(client=self)
+        self.custom_fields = BlueFolderCustomFields(client=self)
+        self.customer_contacts = BlueFolderCustomerContacts(client=self)
+        self.customer_locations = BlueFolderCustomerLocations(client=self)
+        self.customers = BlueFolderCustomers(client=self)
+        self.equipment = BlueFolderEquipment(client=self)
+        self.expenses = BlueFolderExpenses(client=self)
+        self.item_lists = BlueFolderItemLists(client=self)
+        self.labor = BlueFolderLabor(client=self)
+        self.materials = BlueFolderMaterials(client=self)
+        self.service_requests = BlueFolderServiceRequests(client=self)
+        self.tax_codes = BlueFolderTaxCodes(client=self)
+        self.users = BlueFolderUsers(client=self)
 
     def __repr__(self):
-        return "<BlueFolderClient: available domains = [appointments, assignments, attachments, comments, contracts, custom_fields, customer_contacts, customer_locations, customers, equipment, expenses, item_lists, labor, materials, service_requests, tax_codes, users]>"
+        """Readable client summary with all available domain interfaces."""
+        return (
+            "<BlueFolderClient domains=["
+            "appointments, assignments, attachments, comments, contracts, "
+            "custom_fields, customer_contacts, customer_locations, customers, "
+            "equipment, expenses, item_lists, labor, materials, "
+            "service_requests, tax_codes, users]>"
+        )

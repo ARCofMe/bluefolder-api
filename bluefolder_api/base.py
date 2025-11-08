@@ -6,48 +6,92 @@ import xml.etree.ElementTree as ET
 from abc import ABC
 from dotenv import load_dotenv
 import requests
+import base64
 
-# Locate .env file relative to this file or the current working directory
+# -----------------------------------------------------------------------------
+# Environment Loading
+# -----------------------------------------------------------------------------
+# Automatically locate and load .env from either an explicit path or project root.
 env_path = os.getenv("BLUEFOLDER_ENV_PATH")  # optional override
 if not env_path:
-    # Try same directory as base.py or its parent
     here = os.path.dirname(os.path.abspath(__file__))
-    # walk up one directory to project root
     candidate = os.path.join(os.path.dirname(here), ".env")
-    if os.path.exists(candidate):
-        env_path = candidate
-    else:
-        # fallback: current working directory
-        env_path = os.path.join(os.getcwd(), ".env")
+    env_path = candidate if os.path.exists(candidate) else os.path.join(os.getcwd(), ".env")
 
 load_dotenv(dotenv_path=env_path)
 
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+# -----------------------------------------------------------------------------
+# BlueFolderBase
+# -----------------------------------------------------------------------------
 class BlueFolderBase(ABC):
-    def __init__(self, domain: str):
+    """
+    Base class for all BlueFolder API domain modules.
+
+    This class provides common authentication, XML request construction,
+    and HTTP POST helpers shared across all endpoint domains.
+
+    Each subclass should inherit and pass its domain name, e.g.:
+
+        class BlueFolderUsers(BlueFolderBase):
+            def __init__(self, client=None):
+                super().__init__(domain="users", client=client)
+
+    Parameters
+    ----------
+    domain : str
+        The logical API domain name (e.g. "users", "appointments").
+        Used to automatically construct endpoint URLs.
+    client : BlueFolderClient, optional
+        Reference to the parent BlueFolderClient instance which provides
+        the shared session, base URL, and API key/account context.
+    """
+
+    def __init__(self, domain: str, client=None):
+        self.domain = domain
+        self.client = client
+
+        # Load credentials from environment
         self.api_key = os.getenv("BLUEFOLDER_API_KEY")
         self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
-        self.domain = domain
 
         if not self.api_key or not self.account:
-            raise ValueError(
-                "Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env"
-            )
+            raise ValueError("Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env")
 
-        # Base per-domain URL
-        self.base_url = f"https://{self.account}.bluefolder.com/api/2.0/"
+        # Base API URL is dynamically derived from account name (no hardcoding!)
+        self.base_url = getattr(client, "base_url", None) or f"https://{self.account}.bluefolder.com/api/2.0"
 
+        # Use the shared session if available
+        self.session = getattr(client, "session", None) or requests.Session()
+
+    # -------------------------------------------------------------------------
+    # XML request builders and POST handlers
+    # -------------------------------------------------------------------------
     def _build_xml_request(self, params: dict | None = None) -> bytes:
         """
-        Build the <request> body the way the docs show:
+        Build a BlueFolder XML <request> body, including authentication.
 
-        <request>
-          <apikey>...</apikey>
-          <someParam>...</someParam>
-        </request>
+        Example:
+            <request>
+                <apikey>your_key_here</apikey>
+                <someParam>someValue</someParam>
+            </request>
+
+        Parameters
+        ----------
+        params : dict, optional
+            Additional XML child elements to include in the request.
+
+        Returns
+        -------
+        bytes
+            UTF-8 encoded XML request body.
         """
         root = ET.Element("request")
         ET.SubElement(root, "apikey").text = self.api_key
@@ -59,21 +103,43 @@ class BlueFolderBase(ABC):
 
         return ET.tostring(root, encoding="utf-8", method="xml")
 
+    # -------------------------------------------------------------------------
     def _post(self, action: str, xml_data=None, params=None, override_url: str = None):
-        import xml.etree.ElementTree as ET
-        import base64
-        import logging
-        import requests
+        """
+        Perform an XML POST to a BlueFolder domain endpoint.
 
-        logger = logging.getLogger(__name__)
+        Constructs a URL like:
+            https://{account}.bluefolder.com/api/2.0/{domain}/{action}.aspx
 
-        # ensure we don't get double slashes
+        Parameters
+        ----------
+        action : str
+            The specific endpoint action (e.g., "list", "get", "add").
+        xml_data : bytes, optional
+            Prebuilt XML request body; if not provided, one is generated from `params`.
+        params : dict, optional
+            Dictionary of XML parameters if not providing `xml_data`.
+        override_url : str, optional
+            Custom URL to post to (for edge cases like serviceRequests/getAssignmentList.aspx).
+
+        Returns
+        -------
+        xml.etree.ElementTree.Element
+            Parsed XML response root element.
+
+        Raises
+        ------
+        RuntimeError
+            If response is not valid XML.
+        HTTPError
+            If a non-200 HTTP status is returned.
+        """
         url = override_url or f"{self.base_url.rstrip('/')}/{self.domain}/{action}.aspx"
 
         if xml_data is None:
-            xml_data = self._build_xml_request(action, params)
+            xml_data = self._build_xml_request(params)
 
-        # BlueFolder expects api_key first, then account name
+        # BlueFolder expects authentication in a Basic header
         credentials = f"{self.api_key}:{self.account}"
         token = base64.b64encode(credentials.encode()).decode()
 
@@ -83,10 +149,8 @@ class BlueFolderBase(ABC):
         }
 
         logger.debug(f"POST → {url}\n{xml_data.decode()}")
-        response = requests.post(url, data=xml_data, headers=headers)
-
-        logger.debug(f"Status: {response.status_code}")
-        logger.debug(f"Response:\n{response.text}")
+        response = self.session.post(url, data=xml_data, headers=headers)
+        logger.debug(f"Status: {response.status_code}\nResponse:\n{response.text}")
 
         if response.status_code != 200:
             logger.error(f"Error {response.status_code}: {response.text}")
@@ -98,21 +162,53 @@ class BlueFolderBase(ABC):
             logger.error(f"Invalid XML from {url}:\n{response.text}")
             raise RuntimeError("Invalid XML response") from e
 
+    # -------------------------------------------------------------------------
+    def _post_raw(self, endpoint: str, xml_body: str):
+        """
+        Perform a direct XML POST against a fully-qualified endpoint.
+        This bypasses `_build_xml_request` entirely and is used for
+        custom endpoints (e.g. users/list.aspx).
 
+        Parameters
+        ----------
+        endpoint : str
+            The endpoint relative to the base URL (e.g. "users/list.aspx").
+        xml_body : str
+            Fully-formed XML request body string.
 
+        Returns
+        -------
+        str
+            Raw response text.
+        """
+        url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
+        headers = {"Content-Type": "application/xml"}
+        logger.debug(f"POST → {url}\n{xml_body}")
 
+        response = self.session.post(url, data=xml_body.encode("utf-8"), headers=headers)
+        response.raise_for_status()
+        return response.text
 
+    # -------------------------------------------------------------------------
+    # Common CRUD-style operations
+    # -------------------------------------------------------------------------
     def get(self, params: dict = None):
-        return self._post("get", params)
+        """Perform a standard `get` operation."""
+        return self._post("get", params=params)
 
     def list(self, params: dict = None):
-        return self._post("list", params)
+        """Perform a standard `list` operation."""
+        return self._post("list", params=params)
 
     def create(self, params: dict):
-        return self._post("add", params)
+        """Perform a standard `add` (create) operation."""
+        return self._post("add", params=params)
 
     def update(self, params: dict):
-        return self._post("edit", params)
+        """Perform a standard `edit` (update) operation."""
+        return self._post("edit", params=params)
 
-    #def delete(self, params: dict):
-    #    return self._post("delete", params)
+    # Uncomment if your API supports deletes:
+    # def delete(self, params: dict):
+    #     """Perform a standard `delete` operation."""
+    #     return self._post("delete", params=params)
