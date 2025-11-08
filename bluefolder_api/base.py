@@ -59,7 +59,7 @@ class BlueFolderBase(ABC):
 
         return ET.tostring(root, encoding="utf-8", method="xml")
 
-    def _post(self, action: str, xml_data=None, params=None):
+    def _post(self, action: str, xml_data=None, params=None, override_url: str = None):
         import xml.etree.ElementTree as ET
         import base64
         import logging
@@ -68,7 +68,7 @@ class BlueFolderBase(ABC):
         logger = logging.getLogger(__name__)
 
         # ensure we don't get double slashes
-        url = f"{self.base_url.rstrip('/')}/{self.domain}/{action}.aspx"
+        url = override_url or f"{self.base_url.rstrip('/')}/{self.domain}/{action}.aspx"
 
         if xml_data is None:
             xml_data = self._build_xml_request(action, params)

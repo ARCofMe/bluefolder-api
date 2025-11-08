@@ -3,4 +3,4 @@
 */__pycache__/
 */.pytest_cache/
 */tests/__pycache__/
-*/bluefolder_api.egg-info/
+bluefolder_api.egg-info/
