@@ -30,3 +30,13 @@ class BlueFolderCustomerLocations(BlueFolderBase):
                 "technicianId": loc.findtext("technicianId")
             })
         return locations
+
+    def get_location(self, location_id: int):
+        xml_data = f"""
+        <request>
+            <customerLocationGet>
+                <id>{location_id}</id>
+            </customerLocationGet>
+        </request>
+        """
+        return self._post("getLocation", xml_data=xml_data)

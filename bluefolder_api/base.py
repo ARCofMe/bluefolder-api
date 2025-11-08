@@ -23,7 +23,7 @@ if not env_path:
 load_dotenv(dotenv_path=env_path)
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class BlueFolderBase(ABC):
