@@ -1,4 +1,4 @@
-# bluefolder_api/expenses.py
+"""Expense tracking helpers for BlueFolder service requests."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -8,7 +8,7 @@ class BlueFolderExpenses(BlueFolderBase):
     """
     BlueFolder Expenses API interface.
 
-    Handles expense entries (mileage, meals, lodging, misc.) logged 
+    Handles expense entries (mileage, meals, lodging, misc.) logged
     against Service Requests for reimbursement or billing.
     """
 
@@ -41,19 +41,28 @@ class BlueFolderExpenses(BlueFolderBase):
         xml_response = self._post("list", xml_data=xml_data)
         expenses = []
         for e in xml_response.findall(".//expense"):
-            expenses.append({
-                "id": e.findtext("id"),
-                "type": e.findtext("expenseType"),
-                "amount": e.findtext("amount"),
-                "description": e.findtext("description"),
-                "date": e.findtext("dateIncurred"),
-                "userId": e.findtext("userId"),
-                "isBillable": e.findtext("isBillable") == "1",
-            })
+            expenses.append(
+                {
+                    "id": e.findtext("id"),
+                    "type": e.findtext("expenseType"),
+                    "amount": e.findtext("amount"),
+                    "description": e.findtext("description"),
+                    "date": e.findtext("dateIncurred"),
+                    "userId": e.findtext("userId"),
+                    "isBillable": e.findtext("isBillable") == "1",
+                }
+            )
         return expenses
 
     # -------------------------------------------------------------------------
-    def add_to_service_request(self, service_request_id: int, amount: float, expense_type: str, description: str = "", is_billable: bool = True):
+    def add_to_service_request(
+        self,
+        service_request_id: int,
+        amount: float,
+        expense_type: str,
+        description: str = "",
+        is_billable: bool = True,
+    ):
         """
         Add an expense entry to a Service Request.
 

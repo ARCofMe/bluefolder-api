@@ -1,4 +1,4 @@
-# bluefolder_api/customer_locations.py
+"""Utilities for resolving customer locations via the BlueFolder API."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -72,20 +72,22 @@ class BlueFolderCustomerLocations(BlueFolderBase):
 
         locations = []
         for loc in xml_response.findall(".//customerLocation"):
-            locations.append({
-                "id": loc.findtext("customerLocationId"),
-                "customerId": loc.findtext("customerId"),
-                "name": loc.findtext("locationName") or "",
-                "isPrimary": loc.findtext("isPrimary") == "1",
-                "address": loc.findtext("addressStreet") or "",
-                "city": loc.findtext("addressCity") or "",
-                "state": loc.findtext("addressState") or "",
-                "zip": loc.findtext("addressPostalCode") or "",
-                "notes": loc.findtext("locationNotes") or "",
-                "zone": loc.findtext("zone") or "",
-                "serviceManagerId": loc.findtext("serviceManagerId"),
-                "technicianId": loc.findtext("technicianId"),
-            })
+            locations.append(
+                {
+                    "id": loc.findtext("customerLocationId"),
+                    "customerId": loc.findtext("customerId"),
+                    "name": loc.findtext("locationName") or "",
+                    "isPrimary": loc.findtext("isPrimary") == "1",
+                    "address": loc.findtext("addressStreet") or "",
+                    "city": loc.findtext("addressCity") or "",
+                    "state": loc.findtext("addressState") or "",
+                    "zip": loc.findtext("addressPostalCode") or "",
+                    "notes": loc.findtext("locationNotes") or "",
+                    "zone": loc.findtext("zone") or "",
+                    "serviceManagerId": loc.findtext("serviceManagerId"),
+                    "technicianId": loc.findtext("technicianId"),
+                }
+            )
         return locations
 
     # -------------------------------------------------------------------------

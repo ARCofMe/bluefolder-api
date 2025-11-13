@@ -1,4 +1,4 @@
-# bluefolder_api/base.py
+"""Base abstractions shared by the BlueFolder domain clients."""
 
 import os
 import logging
@@ -16,7 +16,9 @@ env_path = os.getenv("BLUEFOLDER_ENV_PATH")  # optional override
 if not env_path:
     here = os.path.dirname(os.path.abspath(__file__))
     candidate = os.path.join(os.path.dirname(here), ".env")
-    env_path = candidate if os.path.exists(candidate) else os.path.join(os.getcwd(), ".env")
+    env_path = (
+        candidate if os.path.exists(candidate) else os.path.join(os.getcwd(), ".env")
+    )
 
 load_dotenv(dotenv_path=env_path)
 
@@ -54,6 +56,7 @@ class BlueFolderBase(ABC):
     """
 
     def __init__(self, domain: str, client=None):
+        """Capture common configuration for a specific BlueFolder domain."""
         self.domain = domain
         self.client = client
 
@@ -62,10 +65,15 @@ class BlueFolderBase(ABC):
         self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
 
         if not self.api_key or not self.account:
-            raise ValueError("Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env")
+            raise ValueError(
+                "Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env"
+            )
 
         # Base API URL is dynamically derived from account name (no hardcoding!)
-        self.base_url = getattr(client, "base_url", None) or f"https://{self.account}.bluefolder.com/api/2.0"
+        self.base_url = (
+            getattr(client, "base_url", None)
+            or f"https://{self.account}.bluefolder.com/api/2.0"
+        )
 
         # Use the shared session if available
         self.session = getattr(client, "session", None) or requests.Session()
@@ -185,7 +193,9 @@ class BlueFolderBase(ABC):
         headers = {"Content-Type": "application/xml"}
         logger.debug(f"POST → {url}\n{xml_body}")
 
-        response = self.session.post(url, data=xml_body.encode("utf-8"), headers=headers)
+        response = self.session.post(
+            url, data=xml_body.encode("utf-8"), headers=headers
+        )
         response.raise_for_status()
         return response.text
 

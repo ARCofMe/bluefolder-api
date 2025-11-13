@@ -1,4 +1,5 @@
-# setup.py
+"""Packaging metadata for the bluefolder-api helper package."""
+
 from setuptools import setup, find_packages
 
 setup(

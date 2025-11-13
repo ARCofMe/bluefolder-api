@@ -1,4 +1,4 @@
-# bluefolder_api/appointments.py
+"""Domain helpers for interacting with BlueFolder appointments."""
 
 import xml.etree.ElementTree as ET
 from datetime import date
@@ -118,12 +118,14 @@ class BlueFolderAppointments(BlueFolderBase):
         appointments = []
 
         for appt in xml.findall(".//appointment"):
-            appointments.append({
-                "id": appt.findtext("id"),
-                "subject": appt.findtext("subject"),
-                "start": appt.findtext("dateTimeStart"),
-                "end": appt.findtext("dateTimeEnd"),
-                "userId": appt.findtext(".//assignedTo/userId"),
-            })
+            appointments.append(
+                {
+                    "id": appt.findtext("id"),
+                    "subject": appt.findtext("subject"),
+                    "start": appt.findtext("dateTimeStart"),
+                    "end": appt.findtext("dateTimeEnd"),
+                    "userId": appt.findtext(".//assignedTo/userId"),
+                }
+            )
 
         return appointments

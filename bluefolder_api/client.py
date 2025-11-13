@@ -1,4 +1,4 @@
-# bluefolder_api/client.py
+"""Primary entrypoint that wires together every BlueFolder domain client."""
 
 import os
 import requests
@@ -58,12 +58,15 @@ class BlueFolderClient:
     """
 
     def __init__(self):
+        """Instantiate the shared HTTP session and all domain-specific clients."""
         # Load core credentials
         self.api_key = os.getenv("BLUEFOLDER_API_KEY")
         self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
 
         if not self.api_key or not self.account:
-            raise ValueError("Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env")
+            raise ValueError(
+                "Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env"
+            )
 
         # Build the base API URL once, centrally
         self.base_url = f"https://{self.account}.bluefolder.com/api/2.0"

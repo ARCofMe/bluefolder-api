@@ -1,4 +1,4 @@
-# bluefolder_api/equipment.py
+"""BlueFolder equipment domain helpers."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -8,7 +8,7 @@ class BlueFolderEquipment(BlueFolderBase):
     """
     BlueFolder Equipment API interface.
 
-    Provides access to equipment records, including asset tracking, 
+    Provides access to equipment records, including asset tracking,
     model/serial information, and maintenance relationships.
 
     Common uses:
@@ -84,12 +84,14 @@ class BlueFolderEquipment(BlueFolderBase):
         xml_response = self._post("list", xml_data=xml_data)
         equipment = []
         for eq in xml_response.findall(".//equipment"):
-            equipment.append({
-                "id": eq.findtext("id"),
-                "name": eq.findtext("name"),
-                "model": eq.findtext("model"),
-                "serialNumber": eq.findtext("serialNumber"),
-                "locationId": eq.findtext("customerLocationId"),
-                "installDate": eq.findtext("installDate"),
-            })
+            equipment.append(
+                {
+                    "id": eq.findtext("id"),
+                    "name": eq.findtext("name"),
+                    "model": eq.findtext("model"),
+                    "serialNumber": eq.findtext("serialNumber"),
+                    "locationId": eq.findtext("customerLocationId"),
+                    "installDate": eq.findtext("installDate"),
+                }
+            )
         return equipment

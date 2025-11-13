@@ -1,4 +1,4 @@
-# bluefolder_api/materials.py
+"""Abstractions for BlueFolder material consumption records."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -41,19 +41,29 @@ class BlueFolderMaterials(BlueFolderBase):
         xml_response = self._post("list", xml_data=xml_data)
         materials = []
         for m in xml_response.findall(".//material"):
-            materials.append({
-                "id": m.findtext("id"),
-                "itemName": m.findtext("itemName"),
-                "description": m.findtext("description"),
-                "quantity": m.findtext("quantity"),
-                "unitPrice": m.findtext("unitPrice"),
-                "total": m.findtext("total"),
-                "isBillable": m.findtext("isBillable") == "1",
-            })
+            materials.append(
+                {
+                    "id": m.findtext("id"),
+                    "itemName": m.findtext("itemName"),
+                    "description": m.findtext("description"),
+                    "quantity": m.findtext("quantity"),
+                    "unitPrice": m.findtext("unitPrice"),
+                    "total": m.findtext("total"),
+                    "isBillable": m.findtext("isBillable") == "1",
+                }
+            )
         return materials
 
     # -------------------------------------------------------------------------
-    def add_to_service_request(self, service_request_id: int, item_name: str, quantity: float, unit_price: float, description: str = "", is_billable: bool = True):
+    def add_to_service_request(
+        self,
+        service_request_id: int,
+        item_name: str,
+        quantity: float,
+        unit_price: float,
+        description: str = "",
+        is_billable: bool = True,
+    ):
         """
         Add a material item to a Service Request.
 

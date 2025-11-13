@@ -1,4 +1,4 @@
-# bluefolder_api/assignments.py
+"""Domain helpers for the BlueFolder service request assignments API."""
 
 import xml.etree.ElementTree as ET
 from datetime import date
@@ -107,18 +107,20 @@ class BlueFolderAssignments(BlueFolderBase):
 
         assignments = []
         for a in xml_response.findall(".//serviceRequestAssignment"):
-            assignments.append({
-                "assignmentId": a.findtext("assignmentId"),
-                "serviceRequestId": a.findtext("serviceRequestId"),
-                "userIds": [u.text for u in a.findall(".//assignedTo/userId")],
-                "comment": a.findtext("assignmentComment"),
-                "start": a.findtext("startDate"),
-                "end": a.findtext("endDate"),
-                "allDay": a.findtext("allDayEvent"),
-                "isComplete": a.findtext("isComplete"),
-                "created": a.findtext("dateTimeCreated"),
-                "completed": a.findtext("dateTimeCompleted"),
-            })
+            assignments.append(
+                {
+                    "assignmentId": a.findtext("assignmentId"),
+                    "serviceRequestId": a.findtext("serviceRequestId"),
+                    "userIds": [u.text for u in a.findall(".//assignedTo/userId")],
+                    "comment": a.findtext("assignmentComment"),
+                    "start": a.findtext("startDate"),
+                    "end": a.findtext("endDate"),
+                    "allDay": a.findtext("allDayEvent"),
+                    "isComplete": a.findtext("isComplete"),
+                    "created": a.findtext("dateTimeCreated"),
+                    "completed": a.findtext("dateTimeCompleted"),
+                }
+            )
 
         return assignments
 

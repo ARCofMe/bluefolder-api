@@ -1,4 +1,4 @@
-# bluefolder_api/service_requests.py
+"""BlueFolder service request listing helpers."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -94,18 +94,20 @@ class BlueFolderServiceRequests(BlueFolderBase):
         requests = []
 
         for sr in xml_response.findall(".//serviceRequest"):
-            requests.append({
-                "id": sr.findtext("id"),
-                "subject": sr.findtext("subject"),
-                "customerId": sr.findtext("customerId"),
-                "address": sr.findtext("locationAddress"),
-                "city": sr.findtext("locationCity"),
-                "state": sr.findtext("locationState"),
-                "zip": sr.findtext("locationZip"),
-                "start": sr.findtext("dateTimeStart"),
-                "end": sr.findtext("dateTimeEnd"),
-                "userIds": [u.text for u in sr.findall(".//assignedTo/userId")],
-            })
+            requests.append(
+                {
+                    "id": sr.findtext("id"),
+                    "subject": sr.findtext("subject"),
+                    "customerId": sr.findtext("customerId"),
+                    "address": sr.findtext("locationAddress"),
+                    "city": sr.findtext("locationCity"),
+                    "state": sr.findtext("locationState"),
+                    "zip": sr.findtext("locationZip"),
+                    "start": sr.findtext("dateTimeStart"),
+                    "end": sr.findtext("dateTimeEnd"),
+                    "userIds": [u.text for u in sr.findall(".//assignedTo/userId")],
+                }
+            )
         return requests
 
     # -------------------------------------------------------------------------
@@ -151,17 +153,19 @@ class BlueFolderServiceRequests(BlueFolderBase):
         requests = []
 
         for sr in xml_response.findall(".//serviceRequest"):
-            requests.append({
-                "id": sr.findtext("id"),
-                "subject": sr.findtext("subject"),
-                "customerId": sr.findtext("customerId"),
-                "address": sr.findtext("locationAddress"),
-                "city": sr.findtext("locationCity"),
-                "state": sr.findtext("locationState"),
-                "zip": sr.findtext("locationZip"),
-                "start": sr.findtext("dateTimeStart"),
-                "end": sr.findtext("dateTimeEnd"),
-            })
+            requests.append(
+                {
+                    "id": sr.findtext("id"),
+                    "subject": sr.findtext("subject"),
+                    "customerId": sr.findtext("customerId"),
+                    "address": sr.findtext("locationAddress"),
+                    "city": sr.findtext("locationCity"),
+                    "state": sr.findtext("locationState"),
+                    "zip": sr.findtext("locationZip"),
+                    "start": sr.findtext("dateTimeStart"),
+                    "end": sr.findtext("dateTimeEnd"),
+                }
+            )
         return requests
 
     # -------------------------------------------------------------------------

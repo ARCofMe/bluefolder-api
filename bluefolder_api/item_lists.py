@@ -1,4 +1,4 @@
-# bluefolder_api/item_lists.py
+"""Interfaces for working with BlueFolder item and price lists."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -31,12 +31,14 @@ class BlueFolderItemLists(BlueFolderBase):
         xml_response = self._post("list")
         item_lists = []
         for i in xml_response.findall(".//itemList"):
-            item_lists.append({
-                "id": i.findtext("id"),
-                "name": i.findtext("name"),
-                "type": i.findtext("listType"),
-                "dateCreated": i.findtext("dateCreated"),
-            })
+            item_lists.append(
+                {
+                    "id": i.findtext("id"),
+                    "name": i.findtext("name"),
+                    "type": i.findtext("listType"),
+                    "dateCreated": i.findtext("dateCreated"),
+                }
+            )
         return item_lists
 
     # -------------------------------------------------------------------------
@@ -62,12 +64,14 @@ class BlueFolderItemLists(BlueFolderBase):
         xml_response = self._post("get", xml_data=xml_data)
         items = []
         for item in xml_response.findall(".//item"):
-            items.append({
-                "id": item.findtext("id"),
-                "name": item.findtext("name"),
-                "description": item.findtext("description"),
-                "price": item.findtext("unitPrice"),
-                "sku": item.findtext("sku"),
-                "category": item.findtext("category"),
-            })
+            items.append(
+                {
+                    "id": item.findtext("id"),
+                    "name": item.findtext("name"),
+                    "description": item.findtext("description"),
+                    "price": item.findtext("unitPrice"),
+                    "sku": item.findtext("sku"),
+                    "category": item.findtext("category"),
+                }
+            )
         return items

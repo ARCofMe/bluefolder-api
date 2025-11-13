@@ -1,4 +1,4 @@
-# bluefolder_api/attachments.py
+"""Wrapper around the BlueFolder attachments domain."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -8,7 +8,7 @@ class BlueFolderAttachments(BlueFolderBase):
     """
     BlueFolder Attachments API interface.
 
-    Handles attachments (images, documents, etc.) associated with 
+    Handles attachments (images, documents, etc.) associated with
     Service Requests or Equipment records.
     """
 
@@ -41,19 +41,27 @@ class BlueFolderAttachments(BlueFolderBase):
         xml_response = self._post("list", xml_data=xml_data)
         attachments = []
         for a in xml_response.findall(".//attachment"):
-            attachments.append({
-                "id": a.findtext("id"),
-                "fileName": a.findtext("fileName"),
-                "fileType": a.findtext("fileType"),
-                "userName": a.findtext("userName"),
-                "dateCreated": a.findtext("dateCreated"),
-                "fileSize": a.findtext("fileSize"),
-                "description": a.findtext("description"),
-            })
+            attachments.append(
+                {
+                    "id": a.findtext("id"),
+                    "fileName": a.findtext("fileName"),
+                    "fileType": a.findtext("fileType"),
+                    "userName": a.findtext("userName"),
+                    "dateCreated": a.findtext("dateCreated"),
+                    "fileSize": a.findtext("fileSize"),
+                    "description": a.findtext("description"),
+                }
+            )
         return attachments
 
     # -------------------------------------------------------------------------
-    def add_to_service_request(self, service_request_id: int, file_name: str, file_data_base64: str, description: str = ""):
+    def add_to_service_request(
+        self,
+        service_request_id: int,
+        file_name: str,
+        file_data_base64: str,
+        description: str = "",
+    ):
         """
         Add an attachment to a Service Request.
 

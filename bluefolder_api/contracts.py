@@ -1,4 +1,4 @@
-# bluefolder_api/contracts.py
+"""Wrapper around the BlueFolder contracts endpoints."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -41,13 +41,15 @@ class BlueFolderContracts(BlueFolderBase):
         xml_response = self._post("list", xml_data=xml_data)
         contracts = []
         for c in xml_response.findall(".//contract"):
-            contracts.append({
-                "id": c.findtext("id"),
-                "name": c.findtext("name"),
-                "number": c.findtext("number"),
-                "startDate": c.findtext("startDate"),
-                "endDate": c.findtext("endDate"),
-                "status": c.findtext("status"),
-                "coverage": c.findtext("coverageDescription"),
-            })
+            contracts.append(
+                {
+                    "id": c.findtext("id"),
+                    "name": c.findtext("name"),
+                    "number": c.findtext("number"),
+                    "startDate": c.findtext("startDate"),
+                    "endDate": c.findtext("endDate"),
+                    "status": c.findtext("status"),
+                    "coverage": c.findtext("coverageDescription"),
+                }
+            )
         return contracts

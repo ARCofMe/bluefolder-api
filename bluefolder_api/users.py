@@ -1,10 +1,11 @@
-# bluefolder_api/users.py
+"""Domain helpers for working with BlueFolder user records."""
 
 import logging
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
 
 logger = logging.getLogger(__name__)
+
 
 class BlueFolderUsers(BlueFolderBase):
     """
@@ -60,24 +61,30 @@ class BlueFolderUsers(BlueFolderBase):
 
         users = []
         for u in xml_response.findall(".//user"):
-            users.append({
-                "id": u.findtext("userId"),
-                "firstName": u.findtext("firstName"),
-                "lastName": u.findtext("lastName"),
-                "email": u.findtext("email"),
-                "inactive": u.findtext("inactive") == "1",
-                "userType": u.findtext("userType"),
-            })
+            users.append(
+                {
+                    "id": u.findtext("userId"),
+                    "firstName": u.findtext("firstName"),
+                    "lastName": u.findtext("lastName"),
+                    "email": u.findtext("email"),
+                    "inactive": u.findtext("inactive") == "1",
+                    "userType": u.findtext("userType"),
+                }
+            )
         return users
 
     # -------------------------------------------------------------------------
-    def list_active(self): 
-        """ Retrieve only active users from BlueFolder. This is a convenience wrapper around list_all() that filters by inactive == False. 
-            Returns ------- list[dict] List of active user dictionaries. 
+    def list_active(self):
+        """
+        Retrieve only active users from BlueFolder.
+
+        Returns
+        -------
+        list[dict]
+            List of user dictionaries with inactive == False.
         """
         all_users = self.list_all()
         return [u for u in all_users if not u.get("inactive")]
-
 
     # -------------------------------------------------------------------------
     def get_by_id(self, user_id: int):
@@ -105,7 +112,6 @@ class BlueFolderUsers(BlueFolderBase):
         xml_response = self._post("get", xml_data=xml_data)
 
         user_node = xml_response.find(".//user")
-        print(f"user node: {user_node}")
         if user_node is None:
             return {}
 
@@ -137,6 +143,7 @@ class BlueFolderUsers(BlueFolderBase):
         except Exception as e:
             # Not all tenants or API versions support this endpoint
             import logging
+
             logging.warning(f"User roles endpoint not supported: {e}")
             return []
 

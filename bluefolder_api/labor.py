@@ -1,4 +1,4 @@
-# bluefolder_api/labor.py
+"""Labor entry utilities for the BlueFolder API."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -41,20 +41,30 @@ class BlueFolderLabor(BlueFolderBase):
         xml_response = self._post("list", xml_data=xml_data)
         labor_entries = []
         for l in xml_response.findall(".//labor"):
-            labor_entries.append({
-                "id": l.findtext("id"),
-                "userId": l.findtext("userId"),
-                "date": l.findtext("dateWorked"),
-                "hours": l.findtext("hoursWorked"),
-                "rate": l.findtext("hourlyRate"),
-                "total": l.findtext("total"),
-                "isBillable": l.findtext("isBillable") == "1",
-                "description": l.findtext("description") or "",
-            })
+            labor_entries.append(
+                {
+                    "id": l.findtext("id"),
+                    "userId": l.findtext("userId"),
+                    "date": l.findtext("dateWorked"),
+                    "hours": l.findtext("hoursWorked"),
+                    "rate": l.findtext("hourlyRate"),
+                    "total": l.findtext("total"),
+                    "isBillable": l.findtext("isBillable") == "1",
+                    "description": l.findtext("description") or "",
+                }
+            )
         return labor_entries
 
     # -------------------------------------------------------------------------
-    def add_to_service_request(self, service_request_id: int, user_id: int, hours: float, date_worked: str, description: str = "", is_billable: bool = True):
+    def add_to_service_request(
+        self,
+        service_request_id: int,
+        user_id: int,
+        hours: float,
+        date_worked: str,
+        description: str = "",
+        is_billable: bool = True,
+    ):
         """
         Add a labor entry to a Service Request.
 

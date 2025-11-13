@@ -1,3 +1,5 @@
+"""Customer domain helpers used to resolve locations and metadata."""
+
 import logging
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -15,6 +17,7 @@ class BlueFolderCustomers(BlueFolderBase):
     """
 
     def __init__(self, client=None):
+        """Initialize the customers domain with shared client context."""
         super().__init__(domain="customers", client=client)
 
     # ------------------------------------------------------------------
@@ -40,7 +43,9 @@ class BlueFolderCustomers(BlueFolderBase):
         if not customer_id or not location_id:
             raise ValueError("Both customer_id and location_id are required")
 
-        logger.info(f"Fetching customer location {location_id} for customer {customer_id}")
+        logger.info(
+            f"Fetching customer location {location_id} for customer {customer_id}"
+        )
 
         xml_data = f"""
         <request>
@@ -54,11 +59,15 @@ class BlueFolderCustomers(BlueFolderBase):
         try:
             xml = self._post("getLocation", xml_data=xml_data.encode("utf-8"))
         except Exception as e:
-            logger.error(f"Error fetching location {location_id} for customer {customer_id}: {e}")
+            logger.error(
+                f"Error fetching location {location_id} for customer {customer_id}: {e}"
+            )
             return ET.Element("response")
 
         if xml.find(".//customerLocation") is None:
-            logger.warning(f"No location found for customerId={customer_id}, locationId={location_id}")
+            logger.warning(
+                f"No location found for customerId={customer_id}, locationId={location_id}"
+            )
         return xml
 
     # ------------------------------------------------------------------

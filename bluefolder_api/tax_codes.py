@@ -1,4 +1,4 @@
-# bluefolder_api/tax_codes.py
+"""BlueFolder tax code domain helper."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -31,11 +31,13 @@ class BlueFolderTaxCodes(BlueFolderBase):
         xml_response = self._post("list")
         tax_codes = []
         for t in xml_response.findall(".//taxCode"):
-            tax_codes.append({
-                "id": t.findtext("id"),
-                "name": t.findtext("name"),
-                "rate": t.findtext("rate"),
-                "isDefault": t.findtext("isDefault") == "1",
-                "description": t.findtext("description") or "",
-            })
+            tax_codes.append(
+                {
+                    "id": t.findtext("id"),
+                    "name": t.findtext("name"),
+                    "rate": t.findtext("rate"),
+                    "isDefault": t.findtext("isDefault") == "1",
+                    "description": t.findtext("description") or "",
+                }
+            )
         return tax_codes

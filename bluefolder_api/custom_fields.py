@@ -1,4 +1,4 @@
-# bluefolder_api/custom_fields.py
+"""Expose BlueFolder custom field metadata via Python."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -40,11 +40,13 @@ class BlueFolderCustomFields(BlueFolderBase):
 
         fields = []
         for f in xml_response.findall(".//customField"):
-            fields.append({
-                "id": f.findtext("id"),
-                "name": f.findtext("name"),
-                "entityType": f.findtext("entityType"),
-                "dataType": f.findtext("dataType"),
-                "isRequired": f.findtext("isRequired") == "1",
-            })
+            fields.append(
+                {
+                    "id": f.findtext("id"),
+                    "name": f.findtext("name"),
+                    "entityType": f.findtext("entityType"),
+                    "dataType": f.findtext("dataType"),
+                    "isRequired": f.findtext("isRequired") == "1",
+                }
+            )
         return fields

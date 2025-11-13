@@ -1,4 +1,4 @@
-# bluefolder_api/customer_contacts.py
+"""Customer contact endpoints for the BlueFolder API."""
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
@@ -41,16 +41,18 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         xml_response = self._post("list", xml_data=xml_data)
         contacts = []
         for c in xml_response.findall(".//customerContact"):
-            contacts.append({
-                "id": c.findtext("id"),
-                "firstName": c.findtext("firstName"),
-                "lastName": c.findtext("lastName"),
-                "title": c.findtext("title"),
-                "email": c.findtext("email"),
-                "phone": c.findtext("phone"),
-                "isPrimary": c.findtext("isPrimary") == "1",
-                "locationId": c.findtext("customerLocationId"),
-            })
+            contacts.append(
+                {
+                    "id": c.findtext("id"),
+                    "firstName": c.findtext("firstName"),
+                    "lastName": c.findtext("lastName"),
+                    "title": c.findtext("title"),
+                    "email": c.findtext("email"),
+                    "phone": c.findtext("phone"),
+                    "isPrimary": c.findtext("isPrimary") == "1",
+                    "locationId": c.findtext("customerLocationId"),
+                }
+            )
         return contacts
 
     # -------------------------------------------------------------------------
