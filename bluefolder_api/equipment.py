@@ -95,3 +95,52 @@ class BlueFolderEquipment(BlueFolderBase):
                 }
             )
         return equipment
+
+    # -------------------------------------------------------------------------
+    # CREATE / UPDATE / LIST ALL
+    # -------------------------------------------------------------------------
+    def add(self, customer_id: int, name: str, **fields):
+        """Add an equipment record."""
+        root = ET.Element("request")
+        eq_add = ET.SubElement(root, "equipmentAdd")
+        ET.SubElement(eq_add, "customerId").text = str(customer_id)
+        ET.SubElement(eq_add, "name").text = name
+        for key, val in fields.items():
+            if val is None:
+                continue
+            ET.SubElement(eq_add, key).text = str(val)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("add", xml_data=xml_data)
+
+    def edit(self, equipment_id: int, **fields):
+        """Edit an equipment record."""
+        root = ET.Element("request")
+        eq_edit = ET.SubElement(root, "equipmentEdit")
+        ET.SubElement(eq_edit, "equipmentId").text = str(equipment_id)
+        for key, val in fields.items():
+            if val is None:
+                continue
+            ET.SubElement(eq_edit, key).text = str(val)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("edit", xml_data=xml_data)
+
+    def list_all(self):
+        """List all equipment records."""
+        xml_response = self._post("list")
+        equipment = []
+        for eq in xml_response.findall(".//equipment"):
+            equipment.append(
+                {
+                    "id": eq.findtext("id"),
+                    "name": eq.findtext("name"),
+                    "model": eq.findtext("model"),
+                    "serialNumber": eq.findtext("serialNumber"),
+                    "customerId": eq.findtext("customerId"),
+                    "locationId": eq.findtext("customerLocationId"),
+                }
+            )
+        return equipment
+
+    def get_custom_fields(self):
+        """Retrieve custom field definitions for equipment."""
+        return self._post("getCustomFields")

@@ -53,3 +53,11 @@ class BlueFolderContracts(BlueFolderBase):
                 }
             )
         return contracts
+
+    def get_by_id(self, contract_id: int):
+        """Retrieve a single contract by ID."""
+        root = ET.Element("request")
+        contract_get = ET.SubElement(root, "contractGet")
+        ET.SubElement(contract_get, "id").text = str(contract_id)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("get", xml_data=xml_data)
