@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="bluefolder-api",
-    version="1.1.1",
+    version="1.1.2",
     description="Wrapper for BlueFolder API v2.0",
     author="David Durost",
     packages=find_packages(),

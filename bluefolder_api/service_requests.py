@@ -146,8 +146,9 @@ class BlueFolderServiceRequests(BlueFolderBase):
 
         # Use <dateRange> with dateField attribute
         date_range = ET.SubElement(sr_list, "dateRange", {"dateField": date_range_type})
-        ET.SubElement(date_range, "dateRangeStart").text = start_date
-        ET.SubElement(date_range, "dateRangeEnd").text = end_date
+        # Ensure values are strings before serializing XML (avoid TypeError when ints are passed)
+        ET.SubElement(date_range, "dateRangeStart").text = str(start_date)
+        ET.SubElement(date_range, "dateRangeEnd").text = str(end_date)
 
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
@@ -205,8 +206,9 @@ class BlueFolderServiceRequests(BlueFolderBase):
         sr_list = ET.SubElement(root, "serviceRequestList")
 
         date_range = ET.SubElement(sr_list, "dateRange", {"dateField": date_field})
-        ET.SubElement(date_range, "dateRangeStart").text = start_date
-        ET.SubElement(date_range, "dateRangeEnd").text = end_date
+        # Cast to str to avoid xml serialization errors if callers pass non-string values
+        ET.SubElement(date_range, "dateRangeStart").text = str(start_date)
+        ET.SubElement(date_range, "dateRangeEnd").text = str(end_date)
 
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
