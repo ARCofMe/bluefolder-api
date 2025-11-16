@@ -261,6 +261,7 @@ It is an independent, unofficial wrapper — not affiliated with BlueFolder, Inc
 
 | Version | Date | Notes |
 |----------|------|-------|
+| `1.1.1` | Nov 2025 | Expanded endpoint coverage: service request add/edit/delete + assignments/comments/labor/materials/history, appointments add/edit/get, attachments download/delete, customers/contacts/locations CRUD, users add/edit, equipment/items CRUD, consolidated tests |
 | `1.0.0` | Nov 2025 | Full v2.0 API domain coverage and tested integration with routing |
 | `0.9.0` | Oct 2025 | Added assignments + service request enrichment |
 | `0.8.0` | Sep 2025 | Initial structure and dotenv integration |
