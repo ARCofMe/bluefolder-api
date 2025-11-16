@@ -265,3 +265,4 @@ It is an independent, unofficial wrapper — not affiliated with BlueFolder, Inc
 | `1.0.0` | Nov 2025 | Full v2.0 API domain coverage and tested integration with routing |
 | `0.9.0` | Oct 2025 | Added assignments + service request enrichment |
 | `0.8.0` | Sep 2025 | Initial structure and dotenv integration |
+ 
