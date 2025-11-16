@@ -1,6 +1,6 @@
 # tests/test_expenses.py
 
-""" Expenses endpoint tests. """
+"""Expenses endpoint tests."""
 
 import xml.etree.ElementTree as ET
 from bluefolder_api.expenses import BlueFolderExpenses

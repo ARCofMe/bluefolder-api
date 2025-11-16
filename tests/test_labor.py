@@ -1,6 +1,6 @@
 # tests/test_labor.py
 
-""" Labor endpoint tests. """
+"""Labor endpoint tests."""
 
 import xml.etree.ElementTree as ET
 from bluefolder_api.labor import BlueFolderLabor

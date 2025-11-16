@@ -1,6 +1,6 @@
 # tests/test_item_lists.py
 
-""" ItemLists endpoint tests. """
+"""ItemLists endpoint tests."""
 
 import xml.etree.ElementTree as ET
 from bluefolder_api.item_lists import BlueFolderItemLists

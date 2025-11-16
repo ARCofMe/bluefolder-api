@@ -1,9 +1,20 @@
 """Primary entrypoint that wires together every BlueFolder domain client."""
 
 import os
-import requests
 import logging
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - test stub
+
+    def load_dotenv(*args, **kwargs):
+        return None
+
+
+try:
+    import requests
+except ImportError:  # pragma: no cover - test stub
+    from bluefolder_api.base import requests  # type: ignore
 
 # Domain imports
 from .appointments import BlueFolderAppointments

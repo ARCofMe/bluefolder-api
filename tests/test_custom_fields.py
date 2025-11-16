@@ -1,6 +1,6 @@
 # tests/test_custom_fields.py
 
-""" CustomFields endpoint tests. """
+"""CustomFields endpoint tests."""
 
 import xml.etree.ElementTree as ET
 from bluefolder_api.custom_fields import BlueFolderCustomFields

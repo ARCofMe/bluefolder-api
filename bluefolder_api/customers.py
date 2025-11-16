@@ -23,16 +23,11 @@ class BlueFolderCustomers(BlueFolderBase):
     # ------------------------------------------------------------------
     # CRUD
     # ------------------------------------------------------------------
-    def list(self, **filters):
+    def list(self, filters=None, **kwargs):
         """List customers with optional filters."""
-        root = ET.Element("request")
-        cust_list = ET.SubElement(root, "customerList")
-        for key, val in filters.items():
-            if val is None:
-                continue
-            ET.SubElement(cust_list, key).text = str(val)
-        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
-        return self._post("list", xml_data=xml_data)
+        filters = filters or {}
+        filters.update(kwargs)
+        return self._post("list", params=filters)
 
     def add(self, **fields):
         """Create a customer record."""
@@ -45,7 +40,9 @@ class BlueFolderCustomers(BlueFolderBase):
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         return self._post("add", xml_data=xml_data)
 
-    def edit(self, customer_id: int | None = None, external_id: str | None = None, **fields):
+    def edit(
+        self, customer_id: int | None = None, external_id: str | None = None, **fields
+    ):
         """Edit a customer by ID or externalId."""
         if not customer_id and not external_id:
             raise ValueError("customer_id or external_id is required")

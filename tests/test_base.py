@@ -9,6 +9,7 @@ from bluefolder_api.base import BlueFolderBase
 
 class DummyDomain(BlueFolderBase):
     """Small concrete subclass used to exercise the base behavior."""
+
     def __init__(self):
         super().__init__(domain="Dummy")
 
@@ -66,7 +67,9 @@ def test_parse_error_raises(monkeypatch):
         text = "not xml"
 
     monkeypatch.setattr("bluefolder_api.base.requests.post", lambda *a, **kw: BadResp())
-    monkeypatch.setattr("bluefolder_api.base.requests.Session.post", lambda *a, **kw: BadResp())
+    monkeypatch.setattr(
+        "bluefolder_api.base.requests.Session.post", lambda *a, **kw: BadResp()
+    )
 
     with pytest.raises(RuntimeError):
         d._post("list", {"foo": "bar"})

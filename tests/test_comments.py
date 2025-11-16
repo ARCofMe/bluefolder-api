@@ -1,6 +1,6 @@
 # tests/test_comments.py
 
-""" Comments endpoint tests. """
+"""Comments endpoint tests."""
 
 import xml.etree.ElementTree as ET
 from bluefolder_api.comments import BlueFolderComments

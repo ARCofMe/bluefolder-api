@@ -102,7 +102,11 @@ class BlueFolderCustomerContacts(BlueFolderBase):
                 continue
             ET.SubElement(contact_add, key).text = str(val)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
-        return self._post("addContact", xml_data=xml_data, override_url=f"{self.base_url}/customers/addContact.aspx")
+        return self._post(
+            "addContact",
+            xml_data=xml_data,
+            override_url=f"{self.base_url}/customers/addContact.aspx",
+        )
 
     def edit(self, contact_id: int, **fields):
         """Edit an existing contact."""
@@ -114,7 +118,11 @@ class BlueFolderCustomerContacts(BlueFolderBase):
                 continue
             ET.SubElement(contact_edit, key).text = str(val)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
-        return self._post("editContact", xml_data=xml_data, override_url=f"{self.base_url}/customers/editContact.aspx")
+        return self._post(
+            "editContact",
+            xml_data=xml_data,
+            override_url=f"{self.base_url}/customers/editContact.aspx",
+        )
 
     def delete(self, contact_id: int):
         """Delete a contact."""
@@ -122,4 +130,8 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         contact_del = ET.SubElement(root, "customerContactDelete")
         ET.SubElement(contact_del, "id").text = str(contact_id)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
-        return self._post("deleteContact", xml_data=xml_data, override_url=f"{self.base_url}/customers/deleteContact.aspx")
+        return self._post(
+            "deleteContact",
+            xml_data=xml_data,
+            override_url=f"{self.base_url}/customers/deleteContact.aspx",
+        )

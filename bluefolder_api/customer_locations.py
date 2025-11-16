@@ -167,7 +167,11 @@ class BlueFolderCustomerLocations(BlueFolderBase):
                 continue
             ET.SubElement(loc_add, key).text = str(val)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
-        return self._post("addLocation", xml_data=xml_data, override_url=f"{self.base_url}/customers/addLocation.aspx")
+        return self._post(
+            "addLocation",
+            xml_data=xml_data,
+            override_url=f"{self.base_url}/customers/addLocation.aspx",
+        )
 
     def edit(self, location_id: int, **fields):
         """Edit an existing location."""
@@ -179,7 +183,11 @@ class BlueFolderCustomerLocations(BlueFolderBase):
                 continue
             ET.SubElement(loc_edit, key).text = str(val)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
-        return self._post("editLocation", xml_data=xml_data, override_url=f"{self.base_url}/customers/editLocation.aspx")
+        return self._post(
+            "editLocation",
+            xml_data=xml_data,
+            override_url=f"{self.base_url}/customers/editLocation.aspx",
+        )
 
     def delete(self, location_id: int):
         """Delete a location."""
@@ -187,4 +195,8 @@ class BlueFolderCustomerLocations(BlueFolderBase):
         loc_del = ET.SubElement(root, "customerLocationDelete")
         ET.SubElement(loc_del, "customerLocationId").text = str(location_id)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
-        return self._post("deleteLocation", xml_data=xml_data, override_url=f"{self.base_url}/customers/deleteLocation.aspx")
+        return self._post(
+            "deleteLocation",
+            xml_data=xml_data,
+            override_url=f"{self.base_url}/customers/deleteLocation.aspx",
+        )

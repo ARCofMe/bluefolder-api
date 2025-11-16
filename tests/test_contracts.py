@@ -1,6 +1,6 @@
 # tests/test_contracts.py
 
-""" Contracts endpoint tests. """
+"""Contracts endpoint tests."""
 
 import xml.etree.ElementTree as ET
 from bluefolder_api.contracts import BlueFolderContracts

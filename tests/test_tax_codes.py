@@ -1,6 +1,6 @@
 # tests/test_tax_codes.py
 
-""" TaxCodes endpoint tests. """
+"""TaxCodes endpoint tests."""
 
 import xml.etree.ElementTree as ET
 from bluefolder_api.tax_codes import BlueFolderTaxCodes

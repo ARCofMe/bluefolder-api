@@ -26,4 +26,3 @@ def test_client_initializes_domains(monkeypatch):
     assert hasattr(c, "expenses")
     assert hasattr(c, "labor")
     assert hasattr(c, "tax_codes")
-
