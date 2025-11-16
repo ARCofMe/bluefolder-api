@@ -129,3 +129,42 @@ class BlueFolderAppointments(BlueFolderBase):
             )
 
         return appointments
+
+    # -------------------------------------------------------------------------
+    # CREATE / UPDATE / GET
+    # -------------------------------------------------------------------------
+    def add(self, **fields):
+        """
+        Create an appointment.
+
+        Common fields: serviceRequestId, userId, startDate, endDate,
+        allDayEvent, description, comment.
+        """
+        root = ET.Element("request")
+        appt_add = ET.SubElement(root, "appointmentAdd")
+        for key, val in fields.items():
+            if val is None:
+                continue
+            ET.SubElement(appt_add, key).text = str(val)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("add", xml_data=xml_data)
+
+    def edit(self, appointment_id: int, **fields):
+        """Edit an existing appointment."""
+        root = ET.Element("request")
+        appt_edit = ET.SubElement(root, "appointmentEdit")
+        ET.SubElement(appt_edit, "appointmentId").text = str(appointment_id)
+        for key, val in fields.items():
+            if val is None:
+                continue
+            ET.SubElement(appt_edit, key).text = str(val)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("edit", xml_data=xml_data)
+
+    def get(self, appointment_id: int):
+        """Retrieve a single appointment."""
+        root = ET.Element("request")
+        appt_get = ET.SubElement(root, "appointmentGet")
+        ET.SubElement(appt_get, "appointmentId").text = str(appointment_id)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("get", xml_data=xml_data)

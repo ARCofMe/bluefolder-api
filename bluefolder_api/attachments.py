@@ -90,3 +90,25 @@ class BlueFolderAttachments(BlueFolderBase):
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
         return self._post("add", xml_data=xml_data)
+
+    # -------------------------------------------------------------------------
+    def download(self, attachment_id: int):
+        """
+        Download an attachment file.
+
+        Returns raw XML response containing a Base64-encoded file payload
+        per BlueFolder docs.
+        """
+        root = ET.Element("request")
+        att_get = ET.SubElement(root, "attachmentDownload")
+        ET.SubElement(att_get, "attachmentId").text = str(attachment_id)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("download", xml_data=xml_data)
+
+    def delete(self, attachment_id: int):
+        """Delete an attachment by ID."""
+        root = ET.Element("request")
+        att_del = ET.SubElement(root, "attachmentDelete")
+        ET.SubElement(att_del, "attachmentId").text = str(attachment_id)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("delete", xml_data=xml_data)
