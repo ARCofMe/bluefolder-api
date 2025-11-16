@@ -149,3 +149,29 @@ class BlueFolderUsers(BlueFolderBase):
 
         roles = [r.text for r in xml_response.findall(".//role")]
         return roles
+
+    # -------------------------------------------------------------------------
+    # CREATE / UPDATE
+    # -------------------------------------------------------------------------
+    def add(self, **fields):
+        """Add a new user."""
+        root = ET.Element("request")
+        user_add = ET.SubElement(root, "userAdd")
+        for key, val in fields.items():
+            if val is None:
+                continue
+            ET.SubElement(user_add, key).text = str(val)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("add", xml_data=xml_data)
+
+    def edit(self, user_id: int, **fields):
+        """Edit an existing user."""
+        root = ET.Element("request")
+        user_edit = ET.SubElement(root, "userEdit")
+        ET.SubElement(user_edit, "id").text = str(user_id)
+        for key, val in fields.items():
+            if val is None:
+                continue
+            ET.SubElement(user_edit, key).text = str(val)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("edit", xml_data=xml_data)
