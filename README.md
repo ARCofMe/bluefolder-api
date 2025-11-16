@@ -99,24 +99,25 @@ requests = bf.service_requests.list_for_user_range(
 
 ## 🧩 Domain Coverage
 
-| Domain | Class | Description |
-|---------|--------|-------------|
-| 🕓 **Appointments** | `BlueFolderAppointments` | Pull user appointments for routing or schedule views |
-| 🔧 **Assignments** | `BlueFolderAssignments` | Retrieve technician job assignments per user/date |
-| 📄 **Service Requests** | `BlueFolderServiceRequests` | Core SR data including subject, customer, and address |
-| 👥 **Customers** | `BlueFolderCustomers` | Manage customer records and locations |
-| 🏠 **Customer Locations** | `BlueFolderCustomerLocations` | Retrieve location info for routing/geocoding |
-| 🧰 **Equipment** | `BlueFolderEquipment` | Asset and serial tracking per customer or site |
-| 🧾 **Materials** | `BlueFolderMaterials` | Manage parts and materials attached to SRs |
-| ⏱️ **Labor** | `BlueFolderLabor` | Log and retrieve technician labor entries |
-| 💵 **Expenses** | `BlueFolderExpenses` | Manage mileage/meals/lodging expenses per SR |
-| 📎 **Attachments** | `BlueFolderAttachments` | Upload or retrieve job photos and documents |
-| 💬 **Comments** | `BlueFolderComments` | Add or view job notes and internal comments |
-| 📋 **Contracts** | `BlueFolderContracts` | Customer contract and coverage details |
-| 🧮 **Custom Fields** | `BlueFolderCustomFields` | Retrieve schema of user-defined fields |
-| 🧾 **Item Lists** | `BlueFolderItemLists` | Access item price lists and catalog data |
-| 💰 **Tax Codes** | `BlueFolderTaxCodes` | Retrieve system tax code definitions |
-| 👤 **Users** | `BlueFolderUsers` | Query system users (technicians, dispatchers, etc.) |
+| Domain | Class | Notes |
+|---------|--------|-------|
+| 🕓 **Appointments** | `BlueFolderAppointments` | list, get, add, edit |
+| 🔧 **Assignments** | `BlueFolderAssignments` | list by user/date |
+| 📄 **Service Requests** | `BlueFolderServiceRequests` | list/get, add/edit/delete, assignment add/edit/delete/complete, comments/labor/materials add/edit, history |
+| 👥 **Customers** | `BlueFolderCustomers` | list, add/edit/delete, get; contacts/locations add/edit/delete/get |
+| 🏠 **Customer Locations** | `BlueFolderCustomerLocations` | list/get, add/edit/delete |
+| 🧰 **Equipment** | `BlueFolderEquipment` | get/list, add/edit, list_all, custom fields |
+| 🧾 **Materials** | `BlueFolderMaterials` | list/add for SR |
+| ⏱️ **Labor** | `BlueFolderLabor` | list/add for SR |
+| 💵 **Expenses** | `BlueFolderExpenses` | list/add for SR |
+| 📎 **Attachments** | `BlueFolderAttachments` | list/add/download/delete for SR |
+| 💬 **Comments** | `BlueFolderComments` | list/add for SR |
+| 📋 **Contracts** | `BlueFolderContracts` | list (by customer), get |
+| 🧮 **Custom Fields** | `BlueFolderCustomFields` | list |
+| 🧾 **Item Lists** | `BlueFolderItemLists` | list price lists, get items |
+| 🛒 **Items** | `BlueFolderItems` | list/get, add/edit/delete |
+| 💰 **Tax Codes** | `BlueFolderTaxCodes` | list |
+| 👤 **Users** | `BlueFolderUsers` | list/list_active, get, add/edit |
 
 ---
 
@@ -189,21 +190,6 @@ bf.comments.add_to_service_request(
     visible_to_customer=True
 )
 ```
-
----
-
-## 📑 Capture BlueFolder Docs Locally
-
-The official docs are online. To audit coverage offline, use the helper scraper:
-
-```bash
-pip install requests beautifulsoup4
-python scripts/scrape_bluefolder_docs.py -o docs/bluefolder_api \
-  https://support.bluefolder.com/hc/en-us/articles/200429409-Create-Service-Request
-```
-
-Each URL is saved as a Markdown file under `docs/bluefolder_api/` using the page slug
-(e.g., `Create-Service-Request.md`). Run this from an environment with network access.
 
 ---
 
