@@ -18,6 +18,7 @@ from .customers import BlueFolderCustomers
 from .equipment import BlueFolderEquipment
 from .expenses import BlueFolderExpenses
 from .item_lists import BlueFolderItemLists
+from .items import BlueFolderItems
 from .labor import BlueFolderLabor
 from .materials import BlueFolderMaterials
 from .service_requests import BlueFolderServiceRequests
@@ -89,6 +90,7 @@ class BlueFolderClient:
         self.equipment = BlueFolderEquipment(client=self)
         self.expenses = BlueFolderExpenses(client=self)
         self.item_lists = BlueFolderItemLists(client=self)
+        self.items = BlueFolderItems(client=self)
         self.labor = BlueFolderLabor(client=self)
         self.materials = BlueFolderMaterials(client=self)
         self.service_requests = BlueFolderServiceRequests(client=self)
@@ -102,5 +104,5 @@ class BlueFolderClient:
             "appointments, assignments, attachments, comments, contracts, "
             "custom_fields, customer_contacts, customer_locations, customers, "
             "equipment, expenses, item_lists, labor, materials, "
-            "service_requests, tax_codes, users]>"
+            "items, service_requests, tax_codes, users]>"
         )
