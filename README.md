@@ -10,7 +10,7 @@ and field technician automation.
 
 ✅ Strongly-typed, modular domain classes  
 ✅ XML-based API request builder compliant with BlueFolder’s schema  
-✅ Built-in retry, caching, and session management via `requests.Session()`  
+✅ Built-in session management via `requests.Session()` with configurable timeouts (30s default)  
 ✅ Consistent `.list()`, `.get()`, `.add()` patterns across all endpoints  
 ✅ Human-readable structured outputs (`dict` / `list`) instead of raw XML  
 ✅ Easily extendable for new BlueFolder domains  
@@ -27,7 +27,7 @@ Requirements:
 - Python 3.10+
 - `requests`
 - `python-dotenv`
-- `tenacity` (for retries, optional)
+- `tenacity` (optional, for retries)
 - `xml.etree.ElementTree` (standard library)
 
 ---
@@ -46,6 +46,8 @@ Optionally specify a custom `.env` path via:
 ```env
 BLUEFOLDER_ENV_PATH=/path/to/.env
 ```
+
+Authentication uses HTTP Basic with your API key as the username and account name as the password. All calls use a default 30s timeout; override by passing `timeout=` into `BlueFolderBase` subclasses if you wrap or extend them.
 
 ---
 

@@ -55,10 +55,11 @@ class BlueFolderBase(ABC):
         the shared session, base URL, and API key/account context.
     """
 
-    def __init__(self, domain: str, client=None):
+    def __init__(self, domain: str, client=None, timeout: float | None = 30.0):
         """Capture common configuration for a specific BlueFolder domain."""
         self.domain = domain
         self.client = client
+        self.timeout = timeout
 
         # Load credentials from environment
         self.api_key = os.getenv("BLUEFOLDER_API_KEY")
@@ -82,7 +83,7 @@ class BlueFolderBase(ABC):
     # -------------------------------------------------------------------------
     # XML request builders and POST handlers
     # -------------------------------------------------------------------------
-    def _build_xml_request(self, action:str, params: dict | None = None) -> bytes:
+    def _build_xml_request(self, action: str, params: dict | None = None) -> bytes:
         """
         Build a BlueFolder XML <request> body, including authentication.
 
@@ -108,6 +109,9 @@ class BlueFolderBase(ABC):
 
         if params:
             for key, value in params.items():
+                if value is None or value == "":
+                    # Skip empty fields to avoid sending "None" or blank tags that fail API validation.
+                    continue
                 ET.SubElement(root, key).text = str(value)
 
         return ET.tostring(root, encoding="utf-8", method="xml")
@@ -162,7 +166,7 @@ class BlueFolderBase(ABC):
         }
 
         logger.debug(f"POST → {url}\n{xml_data.decode()}")
-        response = self.session.post(url, data=xml_data, headers=headers)
+        response = self.session.post(url, data=xml_data, headers=headers, timeout=self.timeout)
         logger.debug(f"Status: {response.status_code}\nResponse:\n{response.text}")
 
         if response.status_code != 200:
