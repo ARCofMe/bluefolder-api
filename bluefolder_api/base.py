@@ -74,6 +74,7 @@ class BlueFolderBase(ABC):
             getattr(client, "base_url", None)
             or f"https://{self.account}.bluefolder.com/api/2.0"
         )
+        self.url = self.base_url
 
         # Use the shared session if available
         self.session = getattr(client, "session", None) or requests.Session()
@@ -81,7 +82,7 @@ class BlueFolderBase(ABC):
     # -------------------------------------------------------------------------
     # XML request builders and POST handlers
     # -------------------------------------------------------------------------
-    def _build_xml_request(self, params: dict | None = None) -> bytes:
+    def _build_xml_request(self, action:str, params: dict | None = None) -> bytes:
         """
         Build a BlueFolder XML <request> body, including authentication.
 
@@ -102,12 +103,12 @@ class BlueFolderBase(ABC):
             UTF-8 encoded XML request body.
         """
         root = ET.Element("request")
+        ET.SubElement(root, "method").text = action
         ET.SubElement(root, "apikey").text = self.api_key
 
         if params:
             for key, value in params.items():
-                if value is not None:
-                    ET.SubElement(root, key).text = str(value)
+                ET.SubElement(root, key).text = str(value)
 
         return ET.tostring(root, encoding="utf-8", method="xml")
 
@@ -145,7 +146,11 @@ class BlueFolderBase(ABC):
         url = override_url or f"{self.base_url.rstrip('/')}/{self.domain}/{action}.aspx"
 
         if xml_data is None:
-            xml_data = self._build_xml_request(params)
+            xml_data = self._build_xml_request(action, params)
+        
+        # if tests pass a dict → build xml
+        if isinstance(xml_data, dict):
+            xml_data = self._build_xml_request(action, xml_data)
 
         # BlueFolder expects authentication in a Basic header
         credentials = f"{self.api_key}:{self.account}"

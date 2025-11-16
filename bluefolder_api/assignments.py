@@ -34,7 +34,7 @@ class BlueFolderAssignments(BlueFolderBase):
         client : BlueFolderClient, optional
             Shared client instance containing base_url, API key, and session.
         """
-        super().__init__("serviceRequests", client=client)
+        super().__init__("assignments", client=client)
 
     # -------------------------------------------------------------------------
     # Assignment Listing Methods
@@ -143,3 +143,7 @@ class BlueFolderAssignments(BlueFolderBase):
         start_date = f"{today} 12:00 AM"
         end_date = f"{today} 11:59 PM"
         return self.list_for_user_range(user_id, start_date, end_date)
+
+    def list_for_user(self, params: dict):
+        """List assignments filtered by userId."""
+        return self._post("list", params=params)

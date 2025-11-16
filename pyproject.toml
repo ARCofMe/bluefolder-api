@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bluefolder-api"
+version = "0.1.0"
+description = "Python client for BlueFolder API"
+readme = "README.md"
+authors = [
+  { name = "David Durost" }
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "requests",
+    "python-dotenv",
+]
+
+[tool.setuptools]
+packages = ["bluefolder_api"]
