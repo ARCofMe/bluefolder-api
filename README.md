@@ -192,6 +192,21 @@ bf.comments.add_to_service_request(
 
 ---
 
+## 📑 Capture BlueFolder Docs Locally
+
+The official docs are online. To audit coverage offline, use the helper scraper:
+
+```bash
+pip install requests beautifulsoup4
+python scripts/scrape_bluefolder_docs.py -o docs/bluefolder_api \
+  https://support.bluefolder.com/hc/en-us/articles/200429409-Create-Service-Request
+```
+
+Each URL is saved as a Markdown file under `docs/bluefolder_api/` using the page slug
+(e.g., `Create-Service-Request.md`). Run this from an environment with network access.
+
+---
+
 ## 🧩 Integration Example: Routing Manager
 
 The `optimized-routing-extension` project consumes this API to build  
