@@ -153,3 +153,38 @@ class BlueFolderCustomerLocations(BlueFolderBase):
             if loc.get("isPrimary"):
                 return loc
         return locations[0] if locations else None
+
+    # -------------------------------------------------------------------------
+    # CREATE / UPDATE / DELETE
+    # -------------------------------------------------------------------------
+    def add(self, customer_id: int, **fields):
+        """Add a location to a customer."""
+        root = ET.Element("request")
+        loc_add = ET.SubElement(root, "customerLocationAdd")
+        ET.SubElement(loc_add, "customerId").text = str(customer_id)
+        for key, val in fields.items():
+            if val is None:
+                continue
+            ET.SubElement(loc_add, key).text = str(val)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("addLocation", xml_data=xml_data, override_url=f"{self.base_url}/customers/addLocation.aspx")
+
+    def edit(self, location_id: int, **fields):
+        """Edit an existing location."""
+        root = ET.Element("request")
+        loc_edit = ET.SubElement(root, "customerLocationEdit")
+        ET.SubElement(loc_edit, "customerLocationId").text = str(location_id)
+        for key, val in fields.items():
+            if val is None:
+                continue
+            ET.SubElement(loc_edit, key).text = str(val)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("editLocation", xml_data=xml_data, override_url=f"{self.base_url}/customers/editLocation.aspx")
+
+    def delete(self, location_id: int):
+        """Delete a location."""
+        root = ET.Element("request")
+        loc_del = ET.SubElement(root, "customerLocationDelete")
+        ET.SubElement(loc_del, "customerLocationId").text = str(location_id)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("deleteLocation", xml_data=xml_data, override_url=f"{self.base_url}/customers/deleteLocation.aspx")
