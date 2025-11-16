@@ -6,7 +6,7 @@ and field technician automation.
 
 ---
 
-## 🚀 Features
+## 🚀 Features (v1.1.1)
 
 ✅ Strongly-typed, modular domain classes  
 ✅ XML-based API request builder compliant with BlueFolder’s schema  
