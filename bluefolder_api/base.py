@@ -6,6 +6,14 @@ import xml.etree.ElementTree as ET
 from abc import ABC
 import base64
 
+# Retry support is optional so unit tests can run without the requests/urllib3 extras.
+try:
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+except Exception:  # pragma: no cover - fallback when requests isn't installed
+    HTTPAdapter = None
+    Retry = None
+
 try:  # optional in test environments
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover - test stub
@@ -97,7 +105,11 @@ class BlueFolderBase(ABC):
         """Capture common configuration for a specific BlueFolder domain."""
         self.domain = domain
         self.client = client
-        self.timeout = timeout
+        timeout_env = os.getenv("BLUEFOLDER_TIMEOUT_SECONDS")
+        try:
+            self.timeout = float(timeout_env) if timeout_env else timeout
+        except Exception:
+            self.timeout = timeout
 
         # Load credentials from environment
         self.api_key = os.getenv("BLUEFOLDER_API_KEY")
@@ -108,15 +120,43 @@ class BlueFolderBase(ABC):
                 "Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env"
             )
 
-        # Base API URL is dynamically derived from account name (no hardcoding!)
+        # Base API URL can be overridden for custom DNS/routing; otherwise derive from account.
+        override_base = os.getenv("BLUEFOLDER_BASE_URL")
         self.base_url = (
-            getattr(client, "base_url", None)
+            override_base
+            or getattr(client, "base_url", None)
             or f"https://{self.account}.bluefolder.com/api/2.0"
         )
         self.url = self.base_url
 
         # Use the shared session if available
         self.session = getattr(client, "session", None) or requests.Session()
+
+        # Optional SSL verification toggle
+        verify_env = os.getenv("BLUEFOLDER_VERIFY_SSL")
+        if verify_env is not None:
+            self.session.verify = str(verify_env).lower() not in ("0", "false", "no")
+
+        # Optional Host header override (useful when BLUEFOLDER_BASE_URL points to an IP)
+        self._host_header = os.getenv("BLUEFOLDER_HOST_HEADER")
+
+        # Configure retries on the session
+        if HTTPAdapter and Retry:
+            try:
+                retry_total = int(os.getenv("BLUEFOLDER_RETRY_TOTAL") or 3)
+                retry_backoff = float(os.getenv("BLUEFOLDER_RETRY_BACKOFF") or 1)
+                retry = Retry(
+                    total=retry_total,
+                    backoff_factor=retry_backoff,
+                    status_forcelist=[429, 500, 502, 503, 504],
+                    allowed_methods=["POST"],
+                    raise_on_status=False,
+                )
+                adapter = HTTPAdapter(max_retries=retry)
+                self.session.mount("https://", adapter)
+                self.session.mount("http://", adapter)
+            except Exception:
+                pass
 
     # -------------------------------------------------------------------------
     # XML request builders and POST handlers
@@ -204,8 +244,13 @@ class BlueFolderBase(ABC):
         }
 
         logger.debug(f"POST → {url}\n{xml_data.decode()}")
+        hdrs = headers or {}
+        if self._host_header:
+            hdrs = dict(hdrs)
+            hdrs["Host"] = self._host_header
+
         response = self.session.post(
-            url, data=xml_data, headers=headers, timeout=self.timeout
+            url, data=xml_data, headers=hdrs, timeout=self.timeout
         )
         logger.debug(f"Status: {response.status_code}\nResponse:\n{response.text}")
 

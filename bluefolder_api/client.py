@@ -68,20 +68,21 @@ class BlueFolderClient:
         >>> users = bf.users.list()
         >>> print(users)
     """
-
-    def __init__(self):
+    
+    def __init__(self, base_url: str | None = None):
         """Instantiate the shared HTTP session and all domain-specific clients."""
         # Load core credentials
         self.api_key = os.getenv("BLUEFOLDER_API_KEY")
         self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
 
-        if not self.api_key or not self.account:
-            raise ValueError(
-                "Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env"
-            )
+        if not self.api_key or (not self.account and not base_url):
+            raise ValueError("Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME/base_url")
 
-        # Build the base API URL once, centrally
-        self.base_url = f"https://{self.account}.bluefolder.com/api/2.0"
+        if base_url:
+            self.base_url = base_url.rstrip("/")
+        else:
+            # Build the base API URL once, centrally
+            self.base_url = f"https://{self.account}.bluefolder.com/api/2.0"
 
         # Create a single persistent HTTP session (shared across all domains)
         self.session = requests.Session()

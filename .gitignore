@@ -7,3 +7,4 @@ utils/__pycache__/
 cache/
 .cache/
 *.old
+docs/bluefolder_api/

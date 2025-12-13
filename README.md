@@ -40,6 +40,9 @@ Create a `.env` file in your project root:
 BLUEFOLDER_API_KEY=your_api_key_here
 BLUEFOLDER_ACCOUNT_NAME=your_account_name_here
 ```
+**Required**: `BLUEFOLDER_API_KEY`
+**Required unless base_url is given**: `BLUEFOLDER_ACCOUNT_NAME`
+*Optional*: base_url argument overrides account-derived URL.
 
 Optionally specify a custom `.env` path via:
 
@@ -48,6 +51,18 @@ BLUEFOLDER_ENV_PATH=/path/to/.env
 ```
 
 Authentication uses HTTP Basic with your API key as the username and account name as the password. All calls use a default 30s timeout; override by passing `timeout=` into `BlueFolderBase` subclasses if you wrap or extend them.
+
+You can configure the client either via `BLUEFOLDER_ACCOUNT_NAME` (default) or by passing `base_url` explicitly. If `base_url` is provided, it’s used instead of the account name.
+
+```python
+from bluefolder_api.client import BlueFolderClient
+
+# Default env-based (needs BLUEFOLDER_API_KEY and BLUEFOLDER_ACCOUNT_NAME)
+bf = BlueFolderClient()
+
+# Explicit base URL for custom domains or overrides
+bf = BlueFolderClient(base_url="https://myaccount.bluefolder.com/api/2.0")
+```
 
 ---
 
