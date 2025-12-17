@@ -85,7 +85,7 @@ class BlueFolderCustomers(BlueFolderBase):
                 or an empty <response> if not found / invalid.
 
         API Reference:
-        https://app.bluefolder.com/api/2.0/customers/getLocation.aspx
+        https://api.bluefolder.com/api/2.0/customers/getLocation.aspx
         """
         if not customer_id or not location_id:
             raise ValueError("Both customer_id and location_id are required")

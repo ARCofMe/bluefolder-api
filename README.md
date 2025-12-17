@@ -41,7 +41,7 @@ BLUEFOLDER_API_KEY=your_api_key_here
 BLUEFOLDER_ACCOUNT_NAME=your_account_name_here
 # Optional overrides
 # BLUEFOLDER_BASE_URL=https://custom-proxy.example.com/api/2.0
-# BLUEFOLDER_ATTACHMENTS_BASE_URL=https://app.bluefolder.com/api/2.0
+# BLUEFOLDER_ATTACHMENTS_BASE_URL=https://api.bluefolder.com/api/2.0
 ```
 **Required**: `BLUEFOLDER_API_KEY`
 **Required unless base_url is given**: `BLUEFOLDER_ACCOUNT_NAME`
@@ -55,7 +55,7 @@ BLUEFOLDER_ENV_PATH=/path/to/.env
 
 Authentication uses HTTP Basic with your API key as the username and account name as the password. All calls use a default 30s timeout; override by passing `timeout=` into `BlueFolderBase` subclasses if you wrap or extend them.
 
-Attachments are served from a shared BlueFolder host by default (`https://app.bluefolder.com/api/2.0`), while all other domains use `https://{account}.bluefolder.com/api/2.0`. If you need to route traffic differently, set `BLUEFOLDER_ATTACHMENTS_BASE_URL` (or `BLUEFOLDER_BASE_URL` for a global override) or pass `base_url` when instantiating `BlueFolderAttachments`.
+Attachments are served from a shared BlueFolder host by default (`https://api.bluefolder.com/api/2.0`), while all other domains use `https://{account}.bluefolder.com/api/2.0`. If you need to route traffic differently, set `BLUEFOLDER_ATTACHMENTS_BASE_URL` (or `BLUEFOLDER_BASE_URL` for a global override) or pass `base_url` when instantiating `BlueFolderAttachments`.
 
 You can configure the client either via `BLUEFOLDER_ACCOUNT_NAME` (default) or by passing `base_url` explicitly. If `base_url` is provided, it’s used instead of the account name.
 

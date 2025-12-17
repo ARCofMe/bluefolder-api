@@ -38,7 +38,7 @@ def test_attachment_download_and_delete_builds_xml():
     assert xml.find(".//attachmentId").text == "2"
 
 
-def test_attachments_use_app_host_by_default():
+def test_attachments_use_shared_api_host_by_default():
     session = DummySession()
 
     class ClientWithoutBaseUrl:
@@ -53,7 +53,7 @@ def test_attachments_use_app_host_by_default():
     sr.add(description="desc")
 
     assert session.calls[0]["url"] == (
-        "https://app.bluefolder.com/api/2.0/attachments/add.aspx"
+        "https://api.bluefolder.com/api/2.0/attachments/add.aspx"
     )
     assert session.calls[1]["url"] == (
         "https://testaccount.bluefolder.com/api/2.0/serviceRequests/add.aspx"
