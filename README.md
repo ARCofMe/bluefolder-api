@@ -39,6 +39,9 @@ Create a `.env` file in your project root:
 ```env
 BLUEFOLDER_API_KEY=your_api_key_here
 BLUEFOLDER_ACCOUNT_NAME=your_account_name_here
+# Optional overrides
+# BLUEFOLDER_BASE_URL=https://custom-proxy.example.com/api/2.0
+# BLUEFOLDER_ATTACHMENTS_BASE_URL=https://app.bluefolder.com/api/2.0
 ```
 **Required**: `BLUEFOLDER_API_KEY`
 **Required unless base_url is given**: `BLUEFOLDER_ACCOUNT_NAME`
@@ -51,6 +54,8 @@ BLUEFOLDER_ENV_PATH=/path/to/.env
 ```
 
 Authentication uses HTTP Basic with your API key as the username and account name as the password. All calls use a default 30s timeout; override by passing `timeout=` into `BlueFolderBase` subclasses if you wrap or extend them.
+
+Attachments are served from a shared BlueFolder host by default (`https://app.bluefolder.com/api/2.0`), while all other domains use `https://{account}.bluefolder.com/api/2.0`. If you need to route traffic differently, set `BLUEFOLDER_ATTACHMENTS_BASE_URL` (or `BLUEFOLDER_BASE_URL` for a global override) or pass `base_url` when instantiating `BlueFolderAttachments`.
 
 You can configure the client either via `BLUEFOLDER_ACCOUNT_NAME` (default) or by passing `base_url` explicitly. If `base_url` is provided, it’s used instead of the account name.
 
@@ -276,6 +281,7 @@ It is an independent, unofficial wrapper — not affiliated with BlueFolder, Inc
 
 | Version | Date | Notes |
 |----------|------|-------|
+| `1.1.3` | Dec 2025 | Base URL override support in the client, optional retry deps for lightweight installs/tests, refreshed docs/tests |
 | `1.1.1` | Nov 2025 | Expanded endpoint coverage: service request add/edit/delete + assignments/comments/labor/materials/history, appointments add/edit/get, attachments download/delete, customers/contacts/locations CRUD, users add/edit, equipment/items CRUD, consolidated tests |
 | `1.0.0` | Nov 2025 | Full v2.0 API domain coverage and tested integration with routing |
 | `0.9.0` | Oct 2025 | Added assignments + service request enrichment |

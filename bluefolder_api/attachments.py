@@ -12,11 +12,19 @@ class BlueFolderAttachments(BlueFolderBase):
     Service Requests or Equipment records.
     """
 
-    def __init__(self, client=None):
+    DEFAULT_BASE_URL = "https://app.bluefolder.com/api/2.0"
+
+    def __init__(self, client=None, base_url: str | None = None):
         """
         Initialize the BlueFolderAttachments API handler.
         """
-        super().__init__("attachments", client=client)
+        super().__init__(
+            "attachments",
+            client=client,
+            domain_base_url=base_url,
+            domain_base_env="BLUEFOLDER_ATTACHMENTS_BASE_URL",
+            default_base_url=self.DEFAULT_BASE_URL,
+        )
 
     # -------------------------------------------------------------------------
     def list_for_service_request(self, service_request_id: int):

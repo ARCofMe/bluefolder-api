@@ -101,7 +101,15 @@ class BlueFolderBase(ABC):
         the shared session, base URL, and API key/account context.
     """
 
-    def __init__(self, domain: str, client=None, timeout: float | None = 30.0):
+    def __init__(
+        self,
+        domain: str,
+        client=None,
+        timeout: float | None = 30.0,
+        domain_base_url: str | None = None,
+        domain_base_env: str | None = None,
+        default_base_url: str | None = None,
+    ):
         """Capture common configuration for a specific BlueFolder domain."""
         self.domain = domain
         self.client = client
@@ -121,12 +129,16 @@ class BlueFolderBase(ABC):
             )
 
         # Base API URL can be overridden for custom DNS/routing; otherwise derive from account.
-        override_base = os.getenv("BLUEFOLDER_BASE_URL")
-        self.base_url = (
-            override_base
+        domain_env_override = os.getenv(domain_base_env) if domain_base_env else None
+        override_base = (
+            domain_base_url
+            or domain_env_override
+            or os.getenv("BLUEFOLDER_BASE_URL")
+            or default_base_url
             or getattr(client, "base_url", None)
             or f"https://{self.account}.bluefolder.com/api/2.0"
         )
+        self.base_url = override_base.rstrip("/")
         self.url = self.base_url
 
         # Use the shared session if available
