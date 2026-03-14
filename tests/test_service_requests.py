@@ -53,9 +53,10 @@ def test_add_assignment(sr):
 
 
 def test_add_comment(sr):
-    sr.add_comment(10, "hello", comment_is_public=True)
+    sr.add_comment(10, "hello", comment_is_public=True, user_id=42)
     data = sr.session.calls[-1]["data"]
     xml = ET.fromstring(data)
     assert xml.find(".//serviceRequestId").text == "10"
     assert xml.find(".//comment").text == "hello"
+    assert xml.find(".//userId").text == "42"
     assert xml.find(".//commentIsPublic").text == "true"

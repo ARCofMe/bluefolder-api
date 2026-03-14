@@ -343,13 +343,19 @@ class BlueFolderServiceRequests(BlueFolderBase):
     # COMMENTS / LABOR / MATERIALS SHORTCUTS
     # -------------------------------------------------------------------------
     def add_comment(
-        self, service_request_id: int, text: str, comment_is_public: bool | None = None
+        self,
+        service_request_id: int,
+        text: str,
+        comment_is_public: bool | None = None,
+        user_id: int | None = None,
     ):
         """Add a comment to a Service Request."""
         root = ET.Element("request")
         sr_comment = ET.SubElement(root, "serviceRequestAddComment")
         ET.SubElement(sr_comment, "serviceRequestId").text = str(service_request_id)
         ET.SubElement(sr_comment, "comment").text = text
+        if user_id is not None:
+            ET.SubElement(sr_comment, "userId").text = str(user_id)
         if comment_is_public is not None:
             ET.SubElement(sr_comment, "commentIsPublic").text = str(
                 comment_is_public
