@@ -278,7 +278,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
     ):
         """Add an assignment to a Service Request."""
         root = ET.Element("request")
-        sr_add = ET.SubElement(root, "serviceRequestAddAssignment")
+        sr_add = ET.SubElement(root, "serviceRequestAssignmentAdd")
         ET.SubElement(sr_add, "serviceRequestId").text = str(service_request_id)
         if start_date:
             ET.SubElement(sr_add, "startDate").text = start_date
@@ -288,7 +288,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
             ET.SubElement(sr_add, "allDayEvent").text = str(all_day_event).lower()
         if assignment_comment:
             ET.SubElement(sr_add, "assignmentComment").text = assignment_comment
-        assignees = ET.SubElement(sr_add, "assigneeUserIds")
+        assignees = ET.SubElement(sr_add, "assignedTo")
         for uid in assignee_user_ids:
             ET.SubElement(assignees, "userId").text = str(uid)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
@@ -300,7 +300,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
         allDayEvent, assignmentComment, assigneeUserIds (list[int]).
         """
         root = ET.Element("request")
-        sr_edit = ET.SubElement(root, "serviceRequestEditAssignment")
+        sr_edit = ET.SubElement(root, "serviceRequestAssignmentEdit")
         ET.SubElement(sr_edit, "assignmentId").text = str(assignment_id)
         if "startDate" in fields:
             ET.SubElement(sr_edit, "startDate").text = fields["startDate"]
@@ -315,7 +315,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
                 "assignmentComment"
             ]
         if "assigneeUserIds" in fields:
-            assignees = ET.SubElement(sr_edit, "assigneeUserIds")
+            assignees = ET.SubElement(sr_edit, "assignedTo")
             for uid in fields["assigneeUserIds"]:
                 ET.SubElement(assignees, "userId").text = str(uid)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
@@ -332,10 +332,10 @@ class BlueFolderServiceRequests(BlueFolderBase):
     def complete_assignment(self, assignment_id: int, comment: str | None = None):
         """Mark an assignment complete."""
         root = ET.Element("request")
-        sr_comp = ET.SubElement(root, "serviceRequestCompleteAssignment")
+        sr_comp = ET.SubElement(root, "serviceRequestAssignmentComplete")
         ET.SubElement(sr_comp, "assignmentId").text = str(assignment_id)
         if comment:
-            ET.SubElement(sr_comp, "comment").text = comment
+            ET.SubElement(sr_comp, "completionComment").text = comment
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         return self._post("completeAssignment", xml_data=xml_data)
 

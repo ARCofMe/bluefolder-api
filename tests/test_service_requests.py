@@ -48,8 +48,33 @@ def test_add_assignment(sr):
     data = sr.session.calls[-1]["data"]
     xml = ET.fromstring(data)
     assert xml.find(".//serviceRequestId").text == "123"
-    assignees = [u.text for u in xml.findall(".//assigneeUserIds/userId")]
+    assert xml.find(".//serviceRequestAssignmentAdd") is not None
+    assignees = [u.text for u in xml.findall(".//assignedTo/userId")]
     assert assignees == ["1", "2"]
+
+
+def test_edit_assignment(sr):
+    sr.edit_assignment(
+        456,
+        assignmentComment="ETA update",
+        assigneeUserIds=[7],
+    )
+    data = sr.session.calls[-1]["data"]
+    xml = ET.fromstring(data)
+    assert xml.find(".//serviceRequestAssignmentEdit") is not None
+    assert xml.find(".//assignmentId").text == "456"
+    assert xml.find(".//assignmentComment").text == "ETA update"
+    assignees = [u.text for u in xml.findall(".//assignedTo/userId")]
+    assert assignees == ["7"]
+
+
+def test_complete_assignment(sr):
+    sr.complete_assignment(789, comment="done")
+    data = sr.session.calls[-1]["data"]
+    xml = ET.fromstring(data)
+    assert xml.find(".//serviceRequestAssignmentComplete") is not None
+    assert xml.find(".//assignmentId").text == "789"
+    assert xml.find(".//completionComment").text == "done"
 
 
 def test_add_comment(sr):

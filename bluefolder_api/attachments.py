@@ -52,12 +52,18 @@ class BlueFolderAttachments(BlueFolderBase):
             attachments.append(
                 {
                     "id": a.findtext("id"),
+                    "token": a.findtext("token") or a.findtext("attachmentToken"),
                     "fileName": a.findtext("fileName"),
                     "fileType": a.findtext("fileType"),
                     "userName": a.findtext("userName"),
                     "dateCreated": a.findtext("dateCreated"),
+                    "fileLastModified": a.findtext("fileLastModified")
+                    or a.findtext("lastModified"),
+                    "postedOn": a.findtext("postedOn"),
                     "fileSize": a.findtext("fileSize"),
                     "description": a.findtext("description"),
+                    "private": a.findtext("private") or a.findtext("isPrivate"),
+                    "isLink": a.findtext("isLink"),
                 }
             )
         return attachments

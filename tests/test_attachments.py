@@ -66,3 +66,35 @@ def test_attachments_base_url_can_be_overridden():
     assert att.session.calls[-1]["url"] == (
         "https://override.test/attachments/add.aspx"
     )
+
+
+def test_list_for_service_request_includes_optional_fields(monkeypatch):
+    att = BlueFolderAttachments(client=DummyClient())
+
+    xml = ET.fromstring(
+        """
+        <response>
+          <attachmentList>
+            <attachment>
+              <id>11</id>
+              <attachmentToken>tok</attachmentToken>
+              <fileName>doc.pdf</fileName>
+              <fileType>pdf</fileType>
+              <fileSize>0</fileSize>
+              <fileLastModified>2024-01-02</fileLastModified>
+              <postedOn>2024-01-03</postedOn>
+              <private>true</private>
+              <isLink>true</isLink>
+            </attachment>
+          </attachmentList>
+        </response>
+        """
+    )
+    monkeypatch.setattr(att, "_post", lambda action, xml_data=None: xml)
+
+    rows = att.list_for_service_request(service_request_id=99)
+    assert rows[0]["token"] == "tok"
+    assert rows[0]["fileLastModified"] == "2024-01-02"
+    assert rows[0]["postedOn"] == "2024-01-03"
+    assert rows[0]["private"] == "true"
+    assert rows[0]["isLink"] == "true"
