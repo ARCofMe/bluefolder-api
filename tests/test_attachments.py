@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 
 from bluefolder_api.attachments import BlueFolderAttachments
+from bluefolder_api.service_requests import BlueFolderServiceRequests
 
 
 class DummySession:
@@ -35,3 +36,65 @@ def test_attachment_download_and_delete_builds_xml():
     att.delete(attachment_id=2)
     xml = ET.fromstring(att.session.calls[-1]["data"])
     assert xml.find(".//attachmentId").text == "2"
+
+
+def test_attachments_use_shared_api_host_by_default():
+    session = DummySession()
+
+    class ClientWithoutBaseUrl:
+        def __init__(self, session):
+            self.session = session
+
+    client = ClientWithoutBaseUrl(session)
+    att = BlueFolderAttachments(client=client)
+    att.add_to_service_request(123, "file.txt", "ZmlsZQ==")
+
+    sr = BlueFolderServiceRequests(client=client)
+    sr.add(description="desc")
+
+    assert session.calls[0]["url"] == (
+        "https://api.bluefolder.com/api/2.0/attachments/add.aspx"
+    )
+    assert session.calls[1]["url"] == (
+        "https://testaccount.bluefolder.com/api/2.0/serviceRequests/add.aspx"
+    )
+
+
+def test_attachments_base_url_can_be_overridden():
+    att = BlueFolderAttachments(client=DummyClient(), base_url="https://override.test")
+    att.add_to_service_request(123, "file.txt", "ZmlsZQ==")
+    assert att.session.calls[-1]["url"] == (
+        "https://override.test/attachments/add.aspx"
+    )
+
+
+def test_list_for_service_request_includes_optional_fields(monkeypatch):
+    att = BlueFolderAttachments(client=DummyClient())
+
+    xml = ET.fromstring(
+        """
+        <response>
+          <attachmentList>
+            <attachment>
+              <id>11</id>
+              <attachmentToken>tok</attachmentToken>
+              <fileName>doc.pdf</fileName>
+              <fileType>pdf</fileType>
+              <fileSize>0</fileSize>
+              <fileLastModified>2024-01-02</fileLastModified>
+              <postedOn>2024-01-03</postedOn>
+              <private>true</private>
+              <isLink>true</isLink>
+            </attachment>
+          </attachmentList>
+        </response>
+        """
+    )
+    monkeypatch.setattr(att, "_post", lambda action, xml_data=None: xml)
+
+    rows = att.list_for_service_request(service_request_id=99)
+    assert rows[0]["token"] == "tok"
+    assert rows[0]["fileLastModified"] == "2024-01-02"
+    assert rows[0]["postedOn"] == "2024-01-03"
+    assert rows[0]["private"] == "true"
+    assert rows[0]["isLink"] == "true"

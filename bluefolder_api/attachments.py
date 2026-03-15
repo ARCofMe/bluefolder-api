@@ -12,11 +12,19 @@ class BlueFolderAttachments(BlueFolderBase):
     Service Requests or Equipment records.
     """
 
-    def __init__(self, client=None):
+    DEFAULT_BASE_URL = "https://api.bluefolder.com/api/2.0"
+
+    def __init__(self, client=None, base_url: str | None = None):
         """
         Initialize the BlueFolderAttachments API handler.
         """
-        super().__init__("attachments", client=client)
+        super().__init__(
+            "attachments",
+            client=client,
+            domain_base_url=base_url,
+            domain_base_env="BLUEFOLDER_ATTACHMENTS_BASE_URL",
+            default_base_url=self.DEFAULT_BASE_URL,
+        )
 
     # -------------------------------------------------------------------------
     def list_for_service_request(self, service_request_id: int):
@@ -44,12 +52,18 @@ class BlueFolderAttachments(BlueFolderBase):
             attachments.append(
                 {
                     "id": a.findtext("id"),
+                    "token": a.findtext("token") or a.findtext("attachmentToken"),
                     "fileName": a.findtext("fileName"),
                     "fileType": a.findtext("fileType"),
                     "userName": a.findtext("userName"),
                     "dateCreated": a.findtext("dateCreated"),
+                    "fileLastModified": a.findtext("fileLastModified")
+                    or a.findtext("lastModified"),
+                    "postedOn": a.findtext("postedOn"),
                     "fileSize": a.findtext("fileSize"),
                     "description": a.findtext("description"),
+                    "private": a.findtext("private") or a.findtext("isPrivate"),
+                    "isLink": a.findtext("isLink"),
                 }
             )
         return attachments
