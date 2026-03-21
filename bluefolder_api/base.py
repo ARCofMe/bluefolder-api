@@ -30,6 +30,7 @@ except ImportError:  # pragma: no cover - test stub
         status_code = 200
         text = ""
         content = b""
+        headers = {}
 
         def raise_for_status(self):
             return None
@@ -273,7 +274,16 @@ class BlueFolderBase(ABC):
         try:
             return ET.fromstring(response.content)
         except ET.ParseError as e:
-            logger.error(f"Invalid XML from {url}:\n{response.text}")
+            resp_headers = getattr(response, "headers", {}) or {}
+            resp_text = getattr(response, "text", "")
+            resp_status = getattr(response, "status_code", "n/a")
+            logger.error(
+                "Invalid XML from %s (status=%s, headers=%s):\n%s",
+                url,
+                resp_status,
+                dict(resp_headers),
+                resp_text,
+            )
             raise RuntimeError("Invalid XML response") from e
 
     # -------------------------------------------------------------------------
