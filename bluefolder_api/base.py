@@ -277,13 +277,12 @@ class BlueFolderBase(ABC):
             resp_headers = getattr(response, "headers", {}) or {}
             resp_text = getattr(response, "text", "")
             resp_status = getattr(response, "status_code", "n/a")
-            logger.error(
-                "Invalid XML from %s (status=%s, headers=%s):\n%s",
-                url,
-                resp_status,
-                dict(resp_headers),
-                resp_text,
-            )
+            log_message = "Invalid XML from %s (status=%s, headers=%s):\n%s"
+            log_args = (url, resp_status, dict(resp_headers), resp_text)
+            if not str(resp_text).strip():
+                logger.warning(*((log_message,) + log_args))
+            else:
+                logger.error(*((log_message,) + log_args))
             raise RuntimeError("Invalid XML response") from e
 
     # -------------------------------------------------------------------------

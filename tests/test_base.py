@@ -73,3 +73,25 @@ def test_parse_error_raises(monkeypatch):
 
     with pytest.raises(RuntimeError):
         d._post("list", {"foo": "bar"})
+
+
+def test_empty_parse_error_logs_warning(monkeypatch, caplog):
+    """Empty XML responses should warn instead of error before raising."""
+    d = DummyDomain()
+
+    class EmptyResp:
+        status_code = 200
+        content = b""
+        text = ""
+        headers = {}
+
+    monkeypatch.setattr("bluefolder_api.base.requests.post", lambda *a, **kw: EmptyResp())
+    monkeypatch.setattr(
+        "bluefolder_api.base.requests.Session.post", lambda *a, **kw: EmptyResp()
+    )
+
+    with pytest.raises(RuntimeError):
+        d._post("list", {"foo": "bar"})
+
+    assert "Invalid XML" in caplog.text
+    assert "WARNING" in caplog.text
