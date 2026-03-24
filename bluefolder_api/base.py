@@ -111,6 +111,8 @@ class BlueFolderBase(ABC):
         domain_base_url: str | None = None,
         domain_base_env: str | None = None,
         default_base_url: str | None = None,
+        use_global_base_url: bool = True,
+        use_host_header: bool = True,
     ):
         """Capture common configuration for a specific BlueFolder domain."""
         self.domain = domain
@@ -132,10 +134,11 @@ class BlueFolderBase(ABC):
 
         # Base API URL can be overridden for custom DNS/routing; otherwise derive from account.
         domain_env_override = os.getenv(domain_base_env) if domain_base_env else None
+        global_base_url = os.getenv("BLUEFOLDER_BASE_URL") if use_global_base_url else None
         override_base = (
             domain_base_url
             or domain_env_override
-            or os.getenv("BLUEFOLDER_BASE_URL")
+            or global_base_url
             or default_base_url
             or getattr(client, "base_url", None)
             or f"https://{self.account}.bluefolder.com/api/2.0"
@@ -152,7 +155,7 @@ class BlueFolderBase(ABC):
             self.session.verify = str(verify_env).lower() not in ("0", "false", "no")
 
         # Optional Host header override (useful when BLUEFOLDER_BASE_URL points to an IP)
-        self._host_header = os.getenv("BLUEFOLDER_HOST_HEADER")
+        self._host_header = os.getenv("BLUEFOLDER_HOST_HEADER") if use_host_header else None
 
         # Configure retries on the session
         if HTTPAdapter and Retry:

@@ -24,6 +24,8 @@ class BlueFolderAttachments(BlueFolderBase):
             domain_base_url=base_url,
             domain_base_env="BLUEFOLDER_ATTACHMENTS_BASE_URL",
             default_base_url=self.DEFAULT_BASE_URL,
+            use_global_base_url=False,
+            use_host_header=False,
         )
 
     # -------------------------------------------------------------------------
@@ -43,6 +45,7 @@ class BlueFolderAttachments(BlueFolderBase):
         """
         root = ET.Element("request")
         att_list = ET.SubElement(root, "attachmentList")
+        ET.SubElement(att_list, "type").text = "ServiceRequest"
         ET.SubElement(att_list, "serviceRequestId").text = str(service_request_id)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
@@ -75,6 +78,8 @@ class BlueFolderAttachments(BlueFolderBase):
         file_name: str,
         file_data_base64: str,
         description: str = "",
+        content_type: str = "application/octet-stream",
+        is_public: bool = False,
     ):
         """
         Add an attachment to a Service Request.
@@ -98,15 +103,17 @@ class BlueFolderAttachments(BlueFolderBase):
         root = ET.Element("request")
         att_add = ET.SubElement(root, "attachmentAdd")
         ET.SubElement(att_add, "serviceRequestId").text = str(service_request_id)
-        ET.SubElement(att_add, "fileName").text = file_name
-        ET.SubElement(att_add, "fileData").text = file_data_base64
-        ET.SubElement(att_add, "description").text = description
+        ET.SubElement(att_add, "isPublic").text = "true" if is_public else "false"
+        ET.SubElement(att_add, "attachmentContent").text = file_data_base64
+        ET.SubElement(att_add, "attachmentFileName").text = file_name
+        ET.SubElement(att_add, "attachmentDescription").text = description
+        ET.SubElement(att_add, "attachmentContentType").text = content_type
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
         return self._post("add", xml_data=xml_data)
 
     # -------------------------------------------------------------------------
-    def download(self, attachment_id: int):
+    def download(self, attachment_token: str):
         """
         Download an attachment file.
 
@@ -115,14 +122,14 @@ class BlueFolderAttachments(BlueFolderBase):
         """
         root = ET.Element("request")
         att_get = ET.SubElement(root, "attachmentDownload")
-        ET.SubElement(att_get, "attachmentId").text = str(attachment_id)
+        ET.SubElement(att_get, "attachmentToken").text = str(attachment_token)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         return self._post("download", xml_data=xml_data)
 
-    def delete(self, attachment_id: int):
+    def delete(self, attachment_token: str):
         """Delete an attachment by ID."""
         root = ET.Element("request")
         att_del = ET.SubElement(root, "attachmentDelete")
-        ET.SubElement(att_del, "attachmentId").text = str(attachment_id)
+        ET.SubElement(att_del, "attachmentToken").text = str(attachment_token)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         return self._post("delete", xml_data=xml_data)

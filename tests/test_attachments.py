@@ -29,13 +29,13 @@ class DummyClient:
 
 def test_attachment_download_and_delete_builds_xml():
     att = BlueFolderAttachments(client=DummyClient())
-    att.download(attachment_id=1)
+    att.download(attachment_token="tok-1")
     xml = ET.fromstring(att.session.calls[-1]["data"])
-    assert xml.find(".//attachmentId").text == "1"
+    assert xml.find(".//attachmentToken").text == "tok-1"
 
-    att.delete(attachment_id=2)
+    att.delete(attachment_token="tok-2")
     xml = ET.fromstring(att.session.calls[-1]["data"])
-    assert xml.find(".//attachmentId").text == "2"
+    assert xml.find(".//attachmentToken").text == "tok-2"
 
 
 def test_attachments_use_shared_api_host_by_default():
@@ -68,6 +68,26 @@ def test_attachments_base_url_can_be_overridden():
     )
 
 
+def test_add_to_service_request_uses_documented_attachment_fields():
+    att = BlueFolderAttachments(client=DummyClient())
+
+    att.add_to_service_request(
+        123,
+        "file.txt",
+        "ZmlsZQ==",
+        description="hello",
+        content_type="text/plain",
+    )
+    xml = ET.fromstring(att.session.calls[-1]["data"])
+
+    assert xml.find(".//serviceRequestId").text == "123"
+    assert xml.find(".//isPublic").text == "false"
+    assert xml.find(".//attachmentContent").text == "ZmlsZQ=="
+    assert xml.find(".//attachmentFileName").text == "file.txt"
+    assert xml.find(".//attachmentDescription").text == "hello"
+    assert xml.find(".//attachmentContentType").text == "text/plain"
+
+
 def test_list_for_service_request_includes_optional_fields(monkeypatch):
     att = BlueFolderAttachments(client=DummyClient())
 
@@ -98,3 +118,13 @@ def test_list_for_service_request_includes_optional_fields(monkeypatch):
     assert rows[0]["postedOn"] == "2024-01-03"
     assert rows[0]["private"] == "true"
     assert rows[0]["isLink"] == "true"
+
+
+def test_list_for_service_request_includes_required_type_filter():
+    att = BlueFolderAttachments(client=DummyClient())
+
+    att.list_for_service_request(service_request_id=99)
+    xml = ET.fromstring(att.session.calls[-1]["data"])
+
+    assert xml.find(".//type").text == "ServiceRequest"
+    assert xml.find(".//serviceRequestId").text == "99"
