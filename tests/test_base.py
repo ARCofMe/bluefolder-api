@@ -95,3 +95,30 @@ def test_empty_parse_error_logs_warning(monkeypatch, caplog):
 
     assert "Invalid XML" in caplog.text
     assert "WARNING" in caplog.text
+
+
+def test_empty_parse_error_retries_before_raising(monkeypatch):
+    """Empty XML responses should retry a small number of times before failing."""
+    d = DummyDomain()
+
+    class EmptyResp:
+        status_code = 200
+        content = b""
+        text = ""
+        headers = {}
+
+    calls = {"count": 0}
+
+    def fake_post(*args, **kwargs):
+        calls["count"] += 1
+        return EmptyResp()
+
+    monkeypatch.setattr("bluefolder_api.base.requests.post", fake_post)
+    monkeypatch.setattr("bluefolder_api.base.requests.Session.post", fake_post)
+    monkeypatch.setattr("bluefolder_api.base.time.sleep", lambda *_args, **_kwargs: None)
+    monkeypatch.setenv("BLUEFOLDER_EMPTY_RESPONSE_RETRY_TOTAL", "2")
+
+    with pytest.raises(RuntimeError):
+        d._post("list", {"foo": "bar"})
+
+    assert calls["count"] == 3

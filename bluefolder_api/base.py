@@ -5,6 +5,7 @@ import logging
 import xml.etree.ElementTree as ET
 from abc import ABC
 import base64
+import time
 
 # Retry support is optional so unit tests can run without the requests/urllib3 extras.
 try:
@@ -271,19 +272,41 @@ class BlueFolderBase(ABC):
             logger.error(f"Error {response.status_code}: {response.text}")
             response.raise_for_status()
 
-        try:
-            return ET.fromstring(response.content)
-        except ET.ParseError as e:
-            resp_headers = getattr(response, "headers", {}) or {}
-            resp_text = getattr(response, "text", "")
-            resp_status = getattr(response, "status_code", "n/a")
-            log_message = "Invalid XML from %s (status=%s, headers=%s):\n%s"
-            log_args = (url, resp_status, dict(resp_headers), resp_text)
-            if not str(resp_text).strip():
-                logger.warning(*((log_message,) + log_args))
-            else:
-                logger.error(*((log_message,) + log_args))
-            raise RuntimeError("Invalid XML response") from e
+        empty_retry_total = int(os.getenv("BLUEFOLDER_EMPTY_RESPONSE_RETRY_TOTAL") or 2)
+        empty_retry_backoff = float(os.getenv("BLUEFOLDER_EMPTY_RESPONSE_RETRY_BACKOFF") or 0.25)
+
+        for attempt in range(empty_retry_total + 1):
+            try:
+                return ET.fromstring(response.content)
+            except ET.ParseError as e:
+                resp_headers = getattr(response, "headers", {}) or {}
+                resp_text = getattr(response, "text", "")
+                resp_status = getattr(response, "status_code", "n/a")
+                is_empty_response = not str(resp_text).strip()
+                should_retry = is_empty_response and attempt < empty_retry_total
+
+                if should_retry:
+                    logger.warning(
+                        "Invalid XML from %s (status=%s, headers=%s), retrying empty response (%s/%s).",
+                        url,
+                        resp_status,
+                        dict(resp_headers),
+                        attempt + 1,
+                        empty_retry_total,
+                    )
+                    time.sleep(empty_retry_backoff * (attempt + 1))
+                    response = self.session.post(
+                        url, data=xml_data, headers=hdrs, timeout=self.timeout
+                    )
+                    continue
+
+                log_message = "Invalid XML from %s (status=%s, headers=%s):\n%s"
+                log_args = (url, resp_status, dict(resp_headers), resp_text)
+                if is_empty_response:
+                    logger.warning(*((log_message,) + log_args))
+                else:
+                    logger.error(*((log_message,) + log_args))
+                raise RuntimeError("Invalid XML response") from e
 
     # -------------------------------------------------------------------------
     def _post_raw(self, endpoint: str, xml_body: str):
