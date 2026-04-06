@@ -74,7 +74,6 @@ load_dotenv(dotenv_path=env_path)
 # Logging
 # -----------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 # -----------------------------------------------------------------------------

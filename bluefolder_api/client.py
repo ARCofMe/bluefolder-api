@@ -1,7 +1,5 @@
-"""Primary entrypoint that wires together every BlueFolder domain client."""
-
-import os
 import logging
+import os
 
 try:
     from dotenv import load_dotenv
@@ -41,7 +39,6 @@ from .users import BlueFolderUsers
 # -------------------------------------------------------------------------
 load_dotenv()
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 class BlueFolderClient:
@@ -87,7 +84,7 @@ class BlueFolderClient:
         # Create a single persistent HTTP session (shared across all domains)
         self.session = requests.Session()
 
-        logger.debug(f"Initialized BlueFolderClient with base_url={self.base_url}")
+        logger.debug("Initialized BlueFolderClient with base_url=%s", self.base_url)
 
         # Domain clients (each inherits this client for shared context)
         self.appointments = BlueFolderAppointments(client=self)
