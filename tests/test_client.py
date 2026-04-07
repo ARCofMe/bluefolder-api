@@ -6,9 +6,11 @@ from bluefolder_api.client import BlueFolderClient
 
 def test_base_url_override(monkeypatch):
     monkeypatch.setenv("BLUEFOLDER_API_KEY", "key")
-    # No account name needed when base_url is provided
+    monkeypatch.delenv("BLUEFOLDER_ACCOUNT_NAME", raising=False)
+    # No account name env needed when it can be inferred from the base URL
     client = BlueFolderClient(base_url="https://custom.bluefolder.com/api/2.0")
     assert client.base_url == "https://custom.bluefolder.com/api/2.0"
+    assert client.account == "custom"
 
 def test_env_account_used_when_no_base_url(monkeypatch):
     monkeypatch.setenv("BLUEFOLDER_API_KEY", "key")
@@ -21,6 +23,12 @@ def test_missing_account_raises_without_base_url(monkeypatch):
     monkeypatch.delenv("BLUEFOLDER_ACCOUNT_NAME", raising=False)
     with pytest.raises(ValueError):
         BlueFolderClient()
+
+def test_custom_proxy_base_url_still_requires_account(monkeypatch):
+    monkeypatch.setenv("BLUEFOLDER_API_KEY", "key")
+    monkeypatch.delenv("BLUEFOLDER_ACCOUNT_NAME", raising=False)
+    with pytest.raises(ValueError):
+        BlueFolderClient(base_url="https://20.40.202.18/api/2.0")
 
 def test_client_initializes_domains(monkeypatch):
     """Ensure the client loads all expected domain handlers."""

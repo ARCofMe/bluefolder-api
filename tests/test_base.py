@@ -10,8 +10,8 @@ from bluefolder_api.base import BlueFolderBase
 class DummyDomain(BlueFolderBase):
     """Small concrete subclass used to exercise the base behavior."""
 
-    def __init__(self):
-        super().__init__(domain="Dummy")
+    def __init__(self, client=None):
+        super().__init__(domain="Dummy", client=client)
 
 
 def test_init_loads_env(monkeypatch):
@@ -30,6 +30,22 @@ def test_missing_env_raises(monkeypatch):
     monkeypatch.delenv("BLUEFOLDER_ACCOUNT_NAME", raising=False)
     with pytest.raises(ValueError):
         DummyDomain()
+
+
+def test_init_uses_client_credentials_without_env(monkeypatch):
+    """Injected client context should satisfy auth requirements without env duplication."""
+    monkeypatch.delenv("BLUEFOLDER_API_KEY", raising=False)
+    monkeypatch.delenv("BLUEFOLDER_ACCOUNT_NAME", raising=False)
+
+    class DummyClient:
+        api_key = "client-key"
+        account = "clientacct"
+        base_url = "https://clientacct.bluefolder.com/api/2.0"
+
+    d = DummyDomain(client=DummyClient())
+    assert d.api_key == "client-key"
+    assert d.account == "clientacct"
+    assert d.base_url == "https://clientacct.bluefolder.com/api/2.0"
 
 
 def test_build_xml_request_includes_method_and_key():
@@ -122,3 +138,14 @@ def test_empty_parse_error_retries_before_raising(monkeypatch):
         d._post("list", {"foo": "bar"})
 
     assert calls["count"] == 3
+
+
+def test_post_raw_uses_auth_headers_and_timeout():
+    """_post_raw should use the same auth/session behavior as standard posts."""
+    d = DummyDomain()
+    d._post_raw("users/list.aspx", "<request />")
+
+    call = d.session.calls[-1]
+    assert call["url"] == "https://testaccount.bluefolder.com/api/2.0/users/list.aspx"
+    assert call["headers"]["Authorization"].startswith("Basic ")
+    assert call["timeout"] == d.timeout

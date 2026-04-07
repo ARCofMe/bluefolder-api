@@ -20,7 +20,7 @@ if "requests" not in sys.modules:
             self.calls = []
 
         def post(self, url, data=None, headers=None, timeout=None):
-            self.calls.append({"url": url, "data": data})
+            self.calls.append({"url": url, "data": data, "headers": headers, "timeout": timeout})
             return DummyResp()
 
     def _dummy_post(url, data=None, headers=None, timeout=None):

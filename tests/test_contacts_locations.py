@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+import pytest
 
 from bluefolder_api.customer_contacts import BlueFolderCustomerContacts
 from bluefolder_api.customer_locations import BlueFolderCustomerLocations
@@ -59,3 +60,15 @@ def test_location_add_edit_delete_xml():
     locations.delete(location_id=21)
     xml = ET.fromstring(locations.session.calls[-1]["data"])
     assert xml.find(".//customerLocationId").text == "21"
+
+
+def test_contact_reads_return_empty_when_endpoint_is_unsupported(monkeypatch):
+    contacts = BlueFolderCustomerContacts(client=DummyClient())
+
+    def raise_not_found(*args, **kwargs):
+        raise RuntimeError("404 Client Error: Not Found for url: https://example.bluefolder.com/api/2.0/customerContacts/list.aspx")
+
+    monkeypatch.setattr(contacts, "_post", raise_not_found)
+
+    assert contacts.list_for_customer(1) == []
+    assert contacts.get_by_id(10) == {}

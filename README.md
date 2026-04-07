@@ -44,8 +44,8 @@ BLUEFOLDER_ACCOUNT_NAME=your_account_name_here
 # BLUEFOLDER_ATTACHMENTS_BASE_URL=https://api.bluefolder.com/api/2.0
 ```
 **Required**: `BLUEFOLDER_API_KEY`
-**Required unless base_url is given**: `BLUEFOLDER_ACCOUNT_NAME`
-*Optional*: base_url argument overrides account-derived URL.
+**Required unless it can be inferred from a standard BlueFolder host URL**: `BLUEFOLDER_ACCOUNT_NAME`
+*Optional*: `base_url` overrides account-derived URL. If you use a custom proxy or IP-based base URL, still set `BLUEFOLDER_ACCOUNT_NAME` because BlueFolder Basic auth uses the account name as the password component.
 
 Optionally specify a custom `.env` path via:
 
@@ -57,7 +57,9 @@ Authentication uses HTTP Basic with your API key as the username and account nam
 
 Attachments are served from a shared BlueFolder host by default (`https://api.bluefolder.com/api/2.0`), while all other domains use `https://{account}.bluefolder.com/api/2.0`. If you need to route traffic differently, set `BLUEFOLDER_ATTACHMENTS_BASE_URL` (or `BLUEFOLDER_BASE_URL` for a global override) or pass `base_url` when instantiating `BlueFolderAttachments`.
 
-You can configure the client either via `BLUEFOLDER_ACCOUNT_NAME` (default) or by passing `base_url` explicitly. If `base_url` is provided, it’s used instead of the account name.
+You can configure the client either via `BLUEFOLDER_ACCOUNT_NAME` (default) or by passing `base_url` explicitly. If `base_url` is a standard host like `https://myaccount.bluefolder.com/api/2.0`, the client can infer the account name from the URL. If `base_url` is a custom proxy, keep `BLUEFOLDER_ACCOUNT_NAME` configured explicitly.
+
+Some BlueFolder tenants do not expose every documented endpoint. In particular, `customerContacts/list.aspx` and `customerContacts/get.aspx` may return `404` even when `/customers/*Contact.aspx` mutations still exist. This library treats those read endpoints as tenant-optional and returns an empty result on `404`.
 
 ```python
 from bluefolder_api.client import BlueFolderClient

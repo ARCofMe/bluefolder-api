@@ -33,6 +33,7 @@ from .materials import BlueFolderMaterials
 from .service_requests import BlueFolderServiceRequests
 from .tax_codes import BlueFolderTaxCodes
 from .users import BlueFolderUsers
+from .base import _infer_account_from_base_url
 
 # -------------------------------------------------------------------------
 # Load environment
@@ -70,10 +71,14 @@ class BlueFolderClient:
         """Instantiate the shared HTTP session and all domain-specific clients."""
         # Load core credentials
         self.api_key = os.getenv("BLUEFOLDER_API_KEY")
-        self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
+        self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME") or _infer_account_from_base_url(base_url)
 
-        if not self.api_key or (not self.account and not base_url):
-            raise ValueError("Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME/base_url")
+        if not self.api_key:
+            raise ValueError("Missing BLUEFOLDER_API_KEY")
+        if not self.account:
+            raise ValueError(
+                "Missing BLUEFOLDER_ACCOUNT_NAME; provide it in the environment or use a standard https://{account}.bluefolder.com/api/2.0 base_url."
+            )
 
         if base_url:
             self.base_url = base_url.rstrip("/")

@@ -1,7 +1,10 @@
 """Customer contact endpoints for the BlueFolder API."""
 
+import logging
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
+
+logger = logging.getLogger(__name__)
 
 
 class BlueFolderCustomerContacts(BlueFolderBase):
@@ -38,7 +41,13 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         ET.SubElement(contact_list, "customerId").text = str(customer_id)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
-        xml_response = self._post("list", xml_data=xml_data)
+        try:
+            xml_response = self._post("list", xml_data=xml_data)
+        except Exception as exc:
+            if self._is_optional_endpoint_error(exc):
+                logger.warning("Customer contacts list endpoint unavailable for this tenant: %s", exc)
+                return []
+            raise
         contacts = []
         for c in xml_response.findall(".//customerContact"):
             contacts.append(
@@ -75,7 +84,13 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         ET.SubElement(contact_get, "id").text = str(contact_id)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
-        xml_response = self._post("get", xml_data=xml_data)
+        try:
+            xml_response = self._post("get", xml_data=xml_data)
+        except Exception as exc:
+            if self._is_optional_endpoint_error(exc):
+                logger.warning("Customer contacts get endpoint unavailable for this tenant: %s", exc)
+                return {}
+            raise
         c = xml_response.find(".//customerContact")
         if c is None:
             return {}
@@ -135,3 +150,9 @@ class BlueFolderCustomerContacts(BlueFolderBase):
             xml_data=xml_data,
             override_url=f"{self.base_url}/customers/deleteContact.aspx",
         )
+
+    @staticmethod
+    def _is_optional_endpoint_error(exc: Exception) -> bool:
+        """Return whether a tenant appears not to support the customerContacts read endpoints."""
+        message = str(exc).lower()
+        return "404" in message or "resource cannot be found" in message or "not found" in message

@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from abc import ABC
 import base64
 import time
+from urllib.parse import urlparse
 
 # Retry support is optional so unit tests can run without the requests/urllib3 extras.
 try:
@@ -76,6 +77,19 @@ load_dotenv(dotenv_path=env_path)
 logger = logging.getLogger(__name__)
 
 
+def _infer_account_from_base_url(base_url: str | None) -> str | None:
+    """Best-effort account-name inference from a standard BlueFolder host URL."""
+    if not base_url:
+        return None
+    hostname = (urlparse(base_url).hostname or "").strip().lower()
+    if not hostname.endswith(".bluefolder.com"):
+        return None
+    prefix = hostname[: -len(".bluefolder.com")].strip(".")
+    if not prefix or prefix == "api":
+        return None
+    return prefix.split(".")[0] or None
+
+
 # -----------------------------------------------------------------------------
 # BlueFolderBase
 # -----------------------------------------------------------------------------
@@ -122,15 +136,6 @@ class BlueFolderBase(ABC):
         except Exception:
             self.timeout = timeout
 
-        # Load credentials from environment
-        self.api_key = os.getenv("BLUEFOLDER_API_KEY")
-        self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME")
-
-        if not self.api_key or not self.account:
-            raise ValueError(
-                "Missing BLUEFOLDER_API_KEY or BLUEFOLDER_ACCOUNT_NAME in .env"
-            )
-
         # Base API URL can be overridden for custom DNS/routing; otherwise derive from account.
         domain_env_override = os.getenv(domain_base_env) if domain_base_env else None
         global_base_url = os.getenv("BLUEFOLDER_BASE_URL") if use_global_base_url else None
@@ -140,8 +145,24 @@ class BlueFolderBase(ABC):
             or global_base_url
             or default_base_url
             or getattr(client, "base_url", None)
-            or f"https://{self.account}.bluefolder.com/api/2.0"
         )
+        # Load credentials from client context first, then environment, then host inference.
+        self.api_key = getattr(client, "api_key", None) or os.getenv("BLUEFOLDER_API_KEY")
+        self.account = (
+            getattr(client, "account", None)
+            or os.getenv("BLUEFOLDER_ACCOUNT_NAME")
+            or _infer_account_from_base_url(override_base)
+        )
+
+        if not self.api_key:
+            raise ValueError("Missing BLUEFOLDER_API_KEY in client context or environment")
+        if not self.account:
+            raise ValueError(
+                "Missing BLUEFOLDER_ACCOUNT_NAME; provide it in the environment or use a standard https://{account}.bluefolder.com/api/2.0 base_url."
+            )
+
+        if not override_base:
+            override_base = f"https://{self.account}.bluefolder.com/api/2.0"
         self.base_url = override_base.rstrip("/")
         self.url = self.base_url
 
@@ -173,6 +194,18 @@ class BlueFolderBase(ABC):
                 self.session.mount("http://", adapter)
             except Exception:
                 pass
+
+    def _auth_headers(self, *, content_type: str = "application/xml") -> dict[str, str]:
+        """Build the standard BlueFolder request headers for this client."""
+        credentials = f"{self.api_key}:{self.account}"
+        token = base64.b64encode(credentials.encode()).decode()
+        headers = {
+            "Content-Type": content_type,
+            "Authorization": f"Basic {token}",
+        }
+        if self._host_header:
+            headers["Host"] = self._host_header
+        return headers
 
     # -------------------------------------------------------------------------
     # XML request builders and POST handlers
@@ -250,20 +283,9 @@ class BlueFolderBase(ABC):
         if isinstance(xml_data, dict):
             xml_data = self._build_xml_request(action, xml_data)
 
-        # BlueFolder expects authentication in a Basic header
-        credentials = f"{self.api_key}:{self.account}"
-        token = base64.b64encode(credentials.encode()).decode()
-
-        headers = {
-            "Content-Type": "application/xml",
-            "Authorization": f"Basic {token}",
-        }
-
-        logger.debug(f"POST → {url}\n{xml_data.decode()}")
-        hdrs = headers or {}
-        if self._host_header:
-            hdrs = dict(hdrs)
-            hdrs["Host"] = self._host_header
+        payload_preview = xml_data.decode() if isinstance(xml_data, (bytes, bytearray)) else str(xml_data)
+        logger.debug(f"POST → {url}\n{payload_preview}")
+        hdrs = self._auth_headers()
 
         response = self.session.post(
             url, data=xml_data, headers=hdrs, timeout=self.timeout
@@ -330,13 +352,14 @@ class BlueFolderBase(ABC):
             Raw response text.
         """
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
-        headers = {"Content-Type": "application/xml"}
+        headers = self._auth_headers()
         logger.debug(f"POST → {url}\n{xml_body}")
 
         response = self.session.post(
-            url, data=xml_body.encode("utf-8"), headers=headers
+            url, data=xml_body.encode("utf-8"), headers=headers, timeout=self.timeout
         )
-        response.raise_for_status()
+        if hasattr(response, "raise_for_status"):
+            response.raise_for_status()
         return response.text
 
     # -------------------------------------------------------------------------
