@@ -117,22 +117,15 @@ Each BlueFolder domain (Appointments, Assignments, Customers, etc.)
 extends a common abstract base: `BlueFolderBase`.
 
 ```mermaid
-classDiagram
-    class BlueFolderBase {
-        +_build_xml_request()
-        +_post()
-        +list()
-        +get()
-        +create()
-        +update()
-    }
-    BlueFolderBase <|-- BlueFolderAppointments
-    BlueFolderBase <|-- BlueFolderAssignments
-    BlueFolderBase <|-- BlueFolderCustomers
-    BlueFolderBase <|-- BlueFolderServiceRequests
-    BlueFolderBase <|-- BlueFolderLabor
-    BlueFolderBase <|-- BlueFolderMaterials
-    BlueFolderBase <|-- BlueFolderUsers
+flowchart TD
+    Base["BlueFolderBase<br/>_build_xml_request()<br/>_post()<br/>list()<br/>get()<br/>create()<br/>update()"]
+    Base --> Appointments["BlueFolderAppointments"]
+    Base --> Assignments["BlueFolderAssignments"]
+    Base --> Customers["BlueFolderCustomers"]
+    Base --> ServiceRequests["BlueFolderServiceRequests"]
+    Base --> Labor["BlueFolderLabor"]
+    Base --> Materials["BlueFolderMaterials"]
+    Base --> Users["BlueFolderUsers"]
 ```
 
 All domain handlers are instantiated automatically through the main client:
