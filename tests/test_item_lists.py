@@ -16,5 +16,5 @@ def test_item_lists_list(fake_response):
     d.list({"serviceRequestId": "200"})
 
     xml = ET.fromstring(fake_response.last_data)
-    assert xml.find("method").text == "list"
+    assert xml.find("method") is None
     assert xml.find("serviceRequestId").text == "200"

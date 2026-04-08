@@ -37,7 +37,7 @@ def test_contact_add_edit_delete_xml():
 
     contacts.edit(contact_id=10, firstName="Janet")
     xml = ET.fromstring(contacts.session.calls[-1]["data"])
-    assert xml.find(".//id").text == "10"
+    assert xml.find(".//customerContactId").text == "10"
     assert xml.find(".//firstName").text == "Janet"
 
     contacts.delete(contact_id=11)
@@ -66,9 +66,14 @@ def test_contact_reads_return_empty_when_endpoint_is_unsupported(monkeypatch):
     contacts = BlueFolderCustomerContacts(client=DummyClient())
 
     def raise_not_found(*args, **kwargs):
-        raise RuntimeError("404 Client Error: Not Found for url: https://example.bluefolder.com/api/2.0/customerContacts/list.aspx")
+        raise RuntimeError("404 Client Error: Not Found for url: https://example.bluefolder.com/api/2.0/customers/get.aspx")
 
-    monkeypatch.setattr(contacts, "_post", raise_not_found)
+    monkeypatch.setattr(contacts, "_customer_get_fallback", raise_not_found)
 
     assert contacts.list_for_customer(1) == []
-    assert contacts.get_by_id(10) == {}
+
+
+def test_contact_get_uses_documented_customers_endpoint():
+    contacts = BlueFolderCustomerContacts(client=DummyClient())
+    contacts.get_by_id(10)
+    assert contacts.session.calls[-1]["url"].endswith("/customers/getContact.aspx")

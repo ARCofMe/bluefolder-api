@@ -33,7 +33,7 @@ from .materials import BlueFolderMaterials
 from .service_requests import BlueFolderServiceRequests
 from .tax_codes import BlueFolderTaxCodes
 from .users import BlueFolderUsers
-from .base import _infer_account_from_base_url
+from .base import _build_default_base_url, _infer_account_from_base_url
 
 # -------------------------------------------------------------------------
 # Load environment
@@ -71,20 +71,13 @@ class BlueFolderClient:
         """Instantiate the shared HTTP session and all domain-specific clients."""
         # Load core credentials
         self.api_key = os.getenv("BLUEFOLDER_API_KEY")
-        self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME") or _infer_account_from_base_url(base_url)
+        resolved_base_url = base_url or os.getenv("BLUEFOLDER_BASE_URL")
+        self.account = os.getenv("BLUEFOLDER_ACCOUNT_NAME") or _infer_account_from_base_url(resolved_base_url)
 
         if not self.api_key:
             raise ValueError("Missing BLUEFOLDER_API_KEY")
-        if not self.account:
-            raise ValueError(
-                "Missing BLUEFOLDER_ACCOUNT_NAME; provide it in the environment or use a standard https://{account}.bluefolder.com/api/2.0 base_url."
-            )
 
-        if base_url:
-            self.base_url = base_url.rstrip("/")
-        else:
-            # Build the base API URL once, centrally
-            self.base_url = f"https://{self.account}.bluefolder.com/api/2.0"
+        self.base_url = (resolved_base_url or _build_default_base_url(self.account)).rstrip("/")
 
         # Create a single persistent HTTP session (shared across all domains)
         self.session = requests.Session()
@@ -98,9 +91,9 @@ class BlueFolderClient:
         self.comments = BlueFolderComments(client=self)
         self.contracts = BlueFolderContracts(client=self)
         self.custom_fields = BlueFolderCustomFields(client=self)
+        self.customers = BlueFolderCustomers(client=self)
         self.customer_contacts = BlueFolderCustomerContacts(client=self)
         self.customer_locations = BlueFolderCustomerLocations(client=self)
-        self.customers = BlueFolderCustomers(client=self)
         self.equipment = BlueFolderEquipment(client=self)
         self.expenses = BlueFolderExpenses(client=self)
         self.item_lists = BlueFolderItemLists(client=self)

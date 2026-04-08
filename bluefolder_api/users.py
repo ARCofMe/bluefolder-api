@@ -57,7 +57,11 @@ class BlueFolderUsers(BlueFolderBase):
                 - isActive (bool)
                 - userType (str)
         """
-        xml_response = self._post("list")
+        root = ET.Element("request")
+        user_list = ET.SubElement(root, "userList")
+        ET.SubElement(user_list, "listType").text = "basic"
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        xml_response = self._post("list", xml_data=xml_data)
 
         users = []
         for u in xml_response.findall(".//user"):
@@ -105,8 +109,7 @@ class BlueFolderUsers(BlueFolderBase):
             Dictionary of user details, or an empty dict if the user is not found.
         """
         root = ET.Element("request")
-        user_get = ET.SubElement(root, "userGet")
-        ET.SubElement(user_get, "id").text = str(user_id)
+        ET.SubElement(root, "userId").text = str(user_id)
 
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         xml_response = self._post("get", xml_data=xml_data)
@@ -116,11 +119,11 @@ class BlueFolderUsers(BlueFolderBase):
             return {}
 
         return {
-            "id": user_node.findtext("id"),
+            "id": user_node.findtext("userId") or user_node.findtext("id"),
             "firstName": user_node.findtext("firstName"),
             "lastName": user_node.findtext("lastName"),
-            "email": user_node.findtext("email"),
-            "isActive": user_node.findtext("isActive") == "1",
+            "email": user_node.findtext("email") or user_node.findtext("emailAddress"),
+            "isActive": user_node.findtext("inactive") != "1",
             "userType": user_node.findtext("userType"),
         }
 
@@ -168,10 +171,27 @@ class BlueFolderUsers(BlueFolderBase):
         """Edit an existing user."""
         root = ET.Element("request")
         user_edit = ET.SubElement(root, "userEdit")
-        ET.SubElement(user_edit, "id").text = str(user_id)
+        ET.SubElement(user_edit, "userId").text = str(user_id)
         for key, val in fields.items():
             if val is None:
                 continue
             ET.SubElement(user_edit, key).text = str(val)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         return self._post("edit", xml_data=xml_data)
+
+    def get(self, params: dict = None):
+        """Retrieve a single user using the documented request shape."""
+        params = params or {}
+        user_id = params.get("userId") or params.get("id")
+        if user_id is None:
+            raise ValueError("userId is required")
+        return self.get_by_id(int(user_id))
+
+    def list(self, params: dict = None):
+        """Retrieve users using the documented list wrapper."""
+        params = params or {}
+        root = ET.Element("request")
+        user_list = ET.SubElement(root, "userList")
+        ET.SubElement(user_list, "listType").text = params.get("listType", "basic")
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("list", xml_data=xml_data)

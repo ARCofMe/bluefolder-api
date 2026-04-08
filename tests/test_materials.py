@@ -16,7 +16,7 @@ def test_materials_list(fake_response):
     m.list({"name": "Filter"})
 
     xml = ET.fromstring(fake_response.last_data)
-    assert xml.find("method").text == "list"
+    assert xml.find("method") is None
     assert xml.find("name").text == "Filter"
 
 
@@ -25,5 +25,5 @@ def test_materials_get(fake_response):
     m.get({"id": 12})
 
     xml = ET.fromstring(fake_response.last_data)
-    assert xml.find("method").text == "get"
+    assert xml.find("method") is None
     assert xml.find("id").text == "12"

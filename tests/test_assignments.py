@@ -19,5 +19,5 @@ def test_assignments_list_for_user(fake_response):
     assert fake_response.last_url.endswith("/assignments/list.aspx")
 
     xml = ET.fromstring(fake_response.last_data)
-    assert xml.find("method").text == "list"
+    assert xml.find("method") is None
     assert xml.find("userId").text == "7"

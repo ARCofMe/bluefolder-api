@@ -2,6 +2,7 @@
 
 """Unit tests covering the shared BlueFolderBase helper."""
 
+import base64
 import xml.etree.ElementTree as ET
 import pytest
 from bluefolder_api.base import BlueFolderBase
@@ -49,12 +50,13 @@ def test_init_uses_client_credentials_without_env(monkeypatch):
 
 
 def test_build_xml_request_includes_method_and_key():
-    """XML requests should include both method and API key."""
+    """XML requests should include only request parameters."""
     d = DummyDomain()
     xml_bytes = d._build_xml_request("list", {"foo": "bar"})
     xml = ET.fromstring(xml_bytes)
-    assert xml.find("method").text == "list"
-    assert xml.find("apikey").text == "test-key"
+    assert xml.tag == "request"
+    assert xml.find("method") is None
+    assert xml.find("apikey") is None
     assert xml.find("foo").text == "bar"
 
 
@@ -69,7 +71,6 @@ def test_post_calls_requests(fake_response):
     )
 
     xml = ET.fromstring(fake_response.last_data)
-    assert xml.find("method").text == "list"
     assert xml.find("x").text == "1"
 
 
@@ -149,3 +150,10 @@ def test_post_raw_uses_auth_headers_and_timeout():
     assert call["url"] == "https://testaccount.bluefolder.com/api/2.0/users/list.aspx"
     assert call["headers"]["Authorization"].startswith("Basic ")
     assert call["timeout"] == d.timeout
+
+
+def test_auth_headers_use_api_token_with_docs_password():
+    d = DummyDomain()
+    headers = d._auth_headers()
+    token = headers["Authorization"].split(" ", 1)[1]
+    assert base64.b64decode(token).decode() == "test-key:x"

@@ -36,23 +36,22 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         list[dict]
             List of customer contacts.
         """
-        root = ET.Element("request")
-        contact_list = ET.SubElement(root, "customerContactList")
-        ET.SubElement(contact_list, "customerId").text = str(customer_id)
-        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
-
         try:
-            xml_response = self._post("list", xml_data=xml_data)
+            if self.client and hasattr(self.client, "customers"):
+                xml_response = self.client.customers.get_by_id(customer_id)
+            else:
+                xml_response = self._customer_get_fallback(customer_id)
         except Exception as exc:
             if self._is_optional_endpoint_error(exc):
-                logger.warning("Customer contacts list endpoint unavailable for this tenant: %s", exc)
+                logger.warning("Customer contact lookup unavailable for this tenant: %s", exc)
                 return []
             raise
         contacts = []
         for c in xml_response.findall(".//customerContact"):
             contacts.append(
                 {
-                    "id": c.findtext("id"),
+                    "id": c.findtext("customerContactId") or c.findtext("id"),
+                    "customerId": c.findtext("customerId"),
                     "firstName": c.findtext("firstName"),
                     "lastName": c.findtext("lastName"),
                     "title": c.findtext("title"),
@@ -81,11 +80,15 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         """
         root = ET.Element("request")
         contact_get = ET.SubElement(root, "customerContactGet")
-        ET.SubElement(contact_get, "id").text = str(contact_id)
+        ET.SubElement(contact_get, "customerContactId").text = str(contact_id)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
         try:
-            xml_response = self._post("get", xml_data=xml_data)
+            xml_response = self._post(
+                "getContact",
+                xml_data=xml_data,
+                override_url=f"{self.base_url}/customers/getContact.aspx",
+            )
         except Exception as exc:
             if self._is_optional_endpoint_error(exc):
                 logger.warning("Customer contacts get endpoint unavailable for this tenant: %s", exc)
@@ -96,7 +99,8 @@ class BlueFolderCustomerContacts(BlueFolderBase):
             return {}
 
         return {
-            "id": c.findtext("id"),
+            "id": c.findtext("customerContactId") or c.findtext("id"),
+            "customerId": c.findtext("customerId"),
             "firstName": c.findtext("firstName"),
             "lastName": c.findtext("lastName"),
             "title": c.findtext("title"),
@@ -127,7 +131,7 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         """Edit an existing contact."""
         root = ET.Element("request")
         contact_edit = ET.SubElement(root, "customerContactEdit")
-        ET.SubElement(contact_edit, "id").text = str(contact_id)
+        ET.SubElement(contact_edit, "customerContactId").text = str(contact_id)
         for key, val in fields.items():
             if val is None:
                 continue
@@ -156,3 +160,14 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         """Return whether a tenant appears not to support the customerContacts read endpoints."""
         message = str(exc).lower()
         return "404" in message or "resource cannot be found" in message or "not found" in message
+
+    def _customer_get_fallback(self, customer_id: int):
+        """Fallback to the documented customers/get.aspx payload when no shared client is available."""
+        root = ET.Element("request")
+        ET.SubElement(root, "customerId").text = str(customer_id)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post(
+            "get",
+            xml_data=xml_data,
+            override_url=f"{self.base_url}/customers/get.aspx",
+        )

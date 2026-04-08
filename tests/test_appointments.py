@@ -16,7 +16,7 @@ def test_appointments_list(fake_response):
     a.list({"userId": "7"})
 
     xml = ET.fromstring(fake_response.last_data)
-    assert xml.find("method").text == "list"
+    assert xml.find("method") is None
     assert xml.find("userId").text == "7"
 
 
@@ -25,8 +25,8 @@ def test_appointments_get(fake_response):
     a.get({"id": "22"})
 
     xml = ET.fromstring(fake_response.last_data)
-    assert xml.find("method").text == "get"
-    assert xml.find("id").text == "22"
+    assert xml.find("method") is None
+    assert xml.find(".//appointmentGet/apptId").text == "22"
 
 
 def test_appointments_add_edit_builds_xml():

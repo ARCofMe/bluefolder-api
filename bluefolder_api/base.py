@@ -76,6 +76,8 @@ load_dotenv(dotenv_path=env_path)
 # -----------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
 
+DEFAULT_BASE_URL = "https://app.bluefolder.com/api/2.0"
+
 
 def _infer_account_from_base_url(base_url: str | None) -> str | None:
     """Best-effort account-name inference from a standard BlueFolder host URL."""
@@ -88,6 +90,13 @@ def _infer_account_from_base_url(base_url: str | None) -> str | None:
     if not prefix or prefix == "api":
         return None
     return prefix.split(".")[0] or None
+
+
+def _build_default_base_url(account: str | None) -> str:
+    """Return the docs-aligned default API root for this client."""
+    if account:
+        return f"https://{account}.bluefolder.com/api/2.0"
+    return DEFAULT_BASE_URL
 
 
 # -----------------------------------------------------------------------------
@@ -156,18 +165,22 @@ class BlueFolderBase(ABC):
 
         if not self.api_key:
             raise ValueError("Missing BLUEFOLDER_API_KEY in client context or environment")
-        if not self.account:
-            raise ValueError(
-                "Missing BLUEFOLDER_ACCOUNT_NAME; provide it in the environment or use a standard https://{account}.bluefolder.com/api/2.0 base_url."
-            )
 
         if not override_base:
-            override_base = f"https://{self.account}.bluefolder.com/api/2.0"
+            override_base = _build_default_base_url(self.account)
         self.base_url = override_base.rstrip("/")
         self.url = self.base_url
 
         # Use the shared session if available
         self.session = getattr(client, "session", None) or requests.Session()
+        if not hasattr(self.session, "headers") or getattr(self.session, "headers", None) is None:
+            self.session.headers = {}
+        self.session.headers.update(
+            {
+                "Accept": "application/xml, text/xml;q=0.9, */*;q=0.1",
+                "User-Agent": os.getenv("BLUEFOLDER_USER_AGENT") or "bluefolder-api/0.1",
+            }
+        )
 
         # Optional SSL verification toggle
         verify_env = os.getenv("BLUEFOLDER_VERIFY_SSL")
@@ -182,14 +195,21 @@ class BlueFolderBase(ABC):
             try:
                 retry_total = int(os.getenv("BLUEFOLDER_RETRY_TOTAL") or 3)
                 retry_backoff = float(os.getenv("BLUEFOLDER_RETRY_BACKOFF") or 1)
+                pool_connections = int(os.getenv("BLUEFOLDER_POOL_CONNECTIONS") or 20)
+                pool_maxsize = int(os.getenv("BLUEFOLDER_POOL_MAXSIZE") or 20)
                 retry = Retry(
                     total=retry_total,
                     backoff_factor=retry_backoff,
                     status_forcelist=[429, 500, 502, 503, 504],
                     allowed_methods=["POST"],
                     raise_on_status=False,
+                    respect_retry_after_header=True,
                 )
-                adapter = HTTPAdapter(max_retries=retry)
+                adapter = HTTPAdapter(
+                    max_retries=retry,
+                    pool_connections=pool_connections,
+                    pool_maxsize=pool_maxsize,
+                )
                 self.session.mount("https://", adapter)
                 self.session.mount("http://", adapter)
             except Exception:
@@ -197,7 +217,8 @@ class BlueFolderBase(ABC):
 
     def _auth_headers(self, *, content_type: str = "application/xml") -> dict[str, str]:
         """Build the standard BlueFolder request headers for this client."""
-        credentials = f"{self.api_key}:{self.account}"
+        basic_auth_password = os.getenv("BLUEFOLDER_BASIC_AUTH_PASSWORD", "x")
+        credentials = f"{self.api_key}:{basic_auth_password}"
         token = base64.b64encode(credentials.encode()).decode()
         headers = {
             "Content-Type": content_type,
@@ -231,8 +252,6 @@ class BlueFolderBase(ABC):
             UTF-8 encoded XML request body.
         """
         root = ET.Element("request")
-        ET.SubElement(root, "method").text = action
-        ET.SubElement(root, "apikey").text = self.api_key
 
         if params:
             for key, value in params.items():

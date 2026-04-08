@@ -16,16 +16,15 @@ def test_customers_list(fake_response):
     c.list({"status": "active"})
 
     xml = ET.fromstring(fake_response.last_data)
-    assert xml.find("method").text == "list"
-    assert xml.find("status").text == "active"
+    assert xml.find(".//customerList/listType").text == "basic"
+    assert xml.find(".//customerList/status").text == "active"
 
 
 def test_customers_get(fake_response):
     c = BlueFolderCustomers()
-    c.get({"customerId": 99})
+    c.get_by_id(99)
 
     xml = ET.fromstring(fake_response.last_data)
-    assert xml.find("method").text == "get"
     assert xml.find("customerId").text == "99"
 
 

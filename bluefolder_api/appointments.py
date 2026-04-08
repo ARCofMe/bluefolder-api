@@ -163,8 +163,13 @@ class BlueFolderAppointments(BlueFolderBase):
 
     def get(self, appointment_id):
         """Retrieve a single appointment."""
-        if isinstance(appointment_id, dict):
-            params = appointment_id
-        else:
-            params = {"id": str(appointment_id)}
-        return self._post("get", params=params)
+        appt_id = (
+            appointment_id.get("apptId") or appointment_id.get("id")
+            if isinstance(appointment_id, dict)
+            else appointment_id
+        )
+        root = ET.Element("request")
+        appt_get = ET.SubElement(root, "appointmentGet")
+        ET.SubElement(appt_get, "apptId").text = str(appt_id)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("get", xml_data=xml_data)

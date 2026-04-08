@@ -27,7 +27,15 @@ class BlueFolderCustomers(BlueFolderBase):
         """List customers with optional filters."""
         filters = filters or {}
         filters.update(kwargs)
-        return self._post("list", params=filters)
+        root = ET.Element("request")
+        customer_list = ET.SubElement(root, "customerList")
+        ET.SubElement(customer_list, "listType").text = filters.pop("listType", "basic")
+        for key, val in filters.items():
+            if val is None:
+                continue
+            ET.SubElement(customer_list, key).text = str(val)
+        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        return self._post("list", xml_data=xml_data)
 
     def add(self, **fields):
         """Create a customer record."""
@@ -133,4 +141,4 @@ class BlueFolderCustomers(BlueFolderBase):
             <customerId>{customer_id}</customerId>
         </request>
         """
-        return self._post("get", xml_data=xml_data)
+        return self._post("get", xml_data=xml_data.encode("utf-8"))
