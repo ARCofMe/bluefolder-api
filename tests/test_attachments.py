@@ -176,3 +176,27 @@ def test_download_rejects_empty_payload():
         assert False, "expected download to fail"
     except BlueFolderInvalidResponseError:
         pass
+
+
+def test_download_content_decodes_xml_base64_payload():
+    att = BlueFolderAttachments(client=DummyClient())
+
+    class XmlResp:
+        status_code = 200
+        content = b"""
+        <response>
+          <attachmentFileName>doc.txt</attachmentFileName>
+          <attachmentContentType>text/plain</attachmentContentType>
+          <attachmentContent>SGVsbG8=</attachmentContent>
+        </response>
+        """
+        text = content.decode()
+        headers = {"Content-Type": "application/xml"}
+
+    att.session.next_response = XmlResp()
+    payload = att.download_content("tok-5")
+
+    assert payload["content"] == b"Hello"
+    assert payload["content_type"] == "text/plain"
+    assert payload["file_name"] == "doc.txt"
+    assert payload["source"] == "xml"

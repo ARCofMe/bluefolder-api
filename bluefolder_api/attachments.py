@@ -191,6 +191,35 @@ class BlueFolderAttachments(BlueFolderBase):
             return ET.fromstring(content)
         return content
 
+    def download_content(self, attachment_token: str) -> dict[str, object]:
+        """Download one attachment and normalize the payload into bytes plus metadata."""
+        payload = self.download(attachment_token)
+        if isinstance(payload, (bytes, bytearray)):
+            return {
+                "content": bytes(payload),
+                "content_type": None,
+                "file_name": None,
+                "source": "binary",
+            }
+
+        content_node = payload.find(".//attachmentContent")
+        if content_node is None:
+            content_node = payload.find(".//fileContent")
+        if content_node is None:
+            content_node = payload.find(".//content")
+        if content_node is None or not (content_node.text or "").strip():
+            raise BlueFolderInvalidResponseError("Attachment XML response did not include attachment content")
+        try:
+            decoded = base64.b64decode((content_node.text or "").strip(), validate=True)
+        except Exception as exc:
+            raise BlueFolderInvalidResponseError("Attachment XML response did not contain valid base64 content") from exc
+        return {
+            "content": decoded,
+            "content_type": payload.findtext(".//attachmentContentType") or payload.findtext(".//contentType"),
+            "file_name": payload.findtext(".//attachmentFileName") or payload.findtext(".//fileName"),
+            "source": "xml",
+        }
+
     def delete(self, attachment_token: str):
         """Delete an attachment by ID."""
         root = ET.Element("request")
