@@ -83,7 +83,7 @@ You can also pipe the raw HTML snippet directly:
 pbpaste | PYTHONPATH=. python scripts/update_status_inventory_from_html.py
 ```
 
-The resulting `bluefolder_status_inventory.json` file is intentionally treated as a local tenant artifact, not library-owned source. The repo ships [bluefolder_status_inventory.example.json](/home/ner0tic/Documents/Projects/ARCoM/bluefolder-api/bluefolder_status_inventory.example.json) only as a schema hint.
+The resulting `bluefolder_status_inventory.json` file is intentionally treated as a local tenant artifact, not library-owned source. The repo ships [`bluefolder_status_inventory.example.json`](./bluefolder_status_inventory.example.json) only as a schema hint.
 
 To export the tenant's available user roles plus assigned roles per user, use:
 
@@ -117,22 +117,15 @@ Each BlueFolder domain (Appointments, Assignments, Customers, etc.)
 extends a common abstract base: `BlueFolderBase`.
 
 ```mermaid
-classDiagram
-    class BlueFolderBase {
-        +_build_xml_request()
-        +_post()
-        +list()
-        +get()
-        +create()
-        +update()
-    }
-    BlueFolderBase <|-- BlueFolderAppointments
-    BlueFolderBase <|-- BlueFolderAssignments
-    BlueFolderBase <|-- BlueFolderCustomers
-    BlueFolderBase <|-- BlueFolderServiceRequests
-    BlueFolderBase <|-- BlueFolderLabor
-    BlueFolderBase <|-- BlueFolderMaterials
-    BlueFolderBase <|-- BlueFolderUsers
+flowchart TD
+    Base["BlueFolderBase<br/>_build_xml_request()<br/>_post()<br/>list()<br/>get()<br/>create()<br/>update()"]
+    Base --> Appointments["BlueFolderAppointments"]
+    Base --> Assignments["BlueFolderAssignments"]
+    Base --> Customers["BlueFolderCustomers"]
+    Base --> ServiceRequests["BlueFolderServiceRequests"]
+    Base --> Labor["BlueFolderLabor"]
+    Base --> Materials["BlueFolderMaterials"]
+    Base --> Users["BlueFolderUsers"]
 ```
 
 All domain handlers are instantiated automatically through the main client:
