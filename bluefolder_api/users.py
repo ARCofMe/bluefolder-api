@@ -39,7 +39,7 @@ class BlueFolderUsers(BlueFolderBase):
     # -------------------------------------------------------------------------
     # USER LISTING
     # -------------------------------------------------------------------------
-    def list_all(self):
+    def list_all(self, *, list_type: str = "basic"):
         """
         Retrieve all users from the BlueFolder system.
 
@@ -59,7 +59,7 @@ class BlueFolderUsers(BlueFolderBase):
         """
         root = ET.Element("request")
         user_list = ET.SubElement(root, "userList")
-        ET.SubElement(user_list, "listType").text = "basic"
+        ET.SubElement(user_list, "listType").text = list_type
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         xml_response = self._post("list", xml_data=xml_data)
 
@@ -73,12 +73,13 @@ class BlueFolderUsers(BlueFolderBase):
                     "email": u.findtext("email"),
                     "inactive": u.findtext("inactive") == "1",
                     "userType": u.findtext("userType"),
+                    "roles": self._parse_roles(u),
                 }
             )
         return users
 
     # -------------------------------------------------------------------------
-    def list_active(self):
+    def list_active(self, *, list_type: str = "basic"):
         """
         Retrieve only active users from BlueFolder.
 
@@ -87,7 +88,7 @@ class BlueFolderUsers(BlueFolderBase):
         list[dict]
             List of user dictionaries with inactive == False.
         """
-        all_users = self.list_all()
+        all_users = self.list_all(list_type=list_type)
         return [u for u in all_users if not u.get("inactive")]
 
     # -------------------------------------------------------------------------
@@ -125,6 +126,7 @@ class BlueFolderUsers(BlueFolderBase):
             "email": user_node.findtext("email") or user_node.findtext("emailAddress"),
             "isActive": user_node.findtext("inactive") != "1",
             "userType": user_node.findtext("userType"),
+            "roles": self._parse_roles(user_node),
         }
 
     # -------------------------------------------------------------------------
@@ -154,6 +156,51 @@ class BlueFolderUsers(BlueFolderBase):
 
         roles = [r.text for r in xml_response.findall(".//role")]
         return roles
+
+    def get_role_inventory(self, *, include_inactive: bool = True) -> dict:
+        """
+        Retrieve the available roles plus per-user assigned roles.
+
+        Returns
+        -------
+        dict
+            {
+              "availableRoles": [...],
+              "users": [
+                {
+                  "id": ...,
+                  "firstName": ...,
+                  "lastName": ...,
+                  "email": ...,
+                  "inactive": ...,
+                  "userType": ...,
+                  "roles": [...]
+                }
+              ]
+            }
+        """
+        users = self.list_all(list_type="full")
+        if not include_inactive:
+            users = [user for user in users if not user.get("inactive")]
+        available_roles = self.get_user_roles()
+        discovered_roles = sorted(
+            {
+                role_name
+                for user in users
+                for role in user.get("roles", [])
+                for role_name in [str(role.get("customName") or role.get("name") or "").strip()]
+                if role_name
+            }
+        )
+        merged_roles = []
+        for role_name in [*available_roles, *discovered_roles]:
+            normalized = str(role_name or "").strip()
+            if normalized and normalized not in merged_roles:
+                merged_roles.append(normalized)
+        return {
+            "availableRoles": merged_roles,
+            "users": users,
+        }
 
     # -------------------------------------------------------------------------
     # CREATE / UPDATE
@@ -197,3 +244,22 @@ class BlueFolderUsers(BlueFolderBase):
         ET.SubElement(user_list, "listType").text = params.get("listType", "basic")
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         return self._post("list", xml_data=xml_data)
+
+    @staticmethod
+    def _parse_roles(user_node):
+        """Extract assigned roles from one BlueFolder user XML node."""
+        roles = []
+        for role_node in user_node.findall(".//roles/role"):
+            name = (role_node.findtext("name") or "").strip() or None
+            custom_name = (role_node.findtext("customName") or "").strip() or None
+            role_id = (role_node.findtext("roleId") or role_node.findtext("id") or "").strip() or None
+            if not (name or custom_name or role_id):
+                continue
+            roles.append(
+                {
+                    "id": role_id,
+                    "name": name,
+                    "customName": custom_name,
+                }
+            )
+        return roles

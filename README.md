@@ -85,6 +85,14 @@ pbpaste | PYTHONPATH=. python scripts/update_status_inventory_from_html.py
 
 The resulting `bluefolder_status_inventory.json` file is intentionally treated as a local tenant artifact, not library-owned source. The repo ships [bluefolder_status_inventory.example.json](/home/ner0tic/Documents/Projects/ARCoM/bluefolder-api/bluefolder_status_inventory.example.json) only as a schema hint.
 
+To export the tenant's available user roles plus assigned roles per user, use:
+
+```bash
+PYTHONPATH=. python scripts/export_user_role_inventory.py
+```
+
+That writes a local `bluefolder_user_roles.json` file by default. Use `--active-only` to exclude inactive users.
+
 The client now raises typed exceptions for common failure classes:
 - `BlueFolderAuthError`
 - `BlueFolderRateLimitError`

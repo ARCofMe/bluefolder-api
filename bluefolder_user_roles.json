@@ -1,0 +1,1374 @@
+{
+  "availableRoles": [
+    "Administrator",
+    "Bookkeeper",
+    "Lead Technician",
+    "Sales",
+    "Scheduler",
+    "Service Manager",
+    "Subcontractor",
+    "Technician"
+  ],
+  "users": [
+    {
+      "id": "13008",
+      "firstName": "Richard",
+      "lastName": "Cunningham",
+      "email": "rcunningham@menhcomputers.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Administrator",
+          "customName": "Administrator"
+        }
+      ]
+    },
+    {
+      "id": "13009",
+      "firstName": "Jim",
+      "lastName": "Vernier",
+      "email": "jvernier@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "13010",
+      "firstName": "Emeth",
+      "lastName": "McGary",
+      "email": "emcgary@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "13047",
+      "firstName": "Tom",
+      "lastName": "Gray",
+      "email": "tgray@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Administrator",
+          "customName": "Administrator"
+        }
+      ]
+    },
+    {
+      "id": "13051",
+      "firstName": "Andy",
+      "lastName": "Levesque",
+      "email": "alevesque@menhcomputers.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "13052",
+      "firstName": "Charlie",
+      "lastName": "Thieme",
+      "email": "cthieme@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "15479",
+      "firstName": "Adam",
+      "lastName": "Mills",
+      "email": "amills@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "18432",
+      "firstName": "Jim",
+      "lastName": "Siglow",
+      "email": "jsiglow@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "24680",
+      "firstName": "Marc",
+      "lastName": "Blais",
+      "email": "support@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "28553",
+      "firstName": "Chamberlin",
+      "lastName": "Baerd",
+      "email": "cbaerd@menhcomputers.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "29957",
+      "firstName": "Ron",
+      "lastName": "Barber",
+      "email": "ron.barber@roadrunner.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Subcontractor",
+          "customName": "Subcontractor"
+        }
+      ]
+    },
+    {
+      "id": "53798",
+      "firstName": "Ashley",
+      "lastName": "Dombrowik",
+      "email": "adombrowik@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Bookkeeper",
+          "customName": "Bookkeeper"
+        },
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "54332",
+      "firstName": "Tory",
+      "lastName": "Davis",
+      "email": "tdavis@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33460342",
+      "firstName": "Joshua",
+      "lastName": "Cunningham",
+      "email": "Jcunningham@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33461967",
+      "firstName": "Rogel",
+      "lastName": "Negron",
+      "email": "rnegron@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33465710",
+      "firstName": "Bradley",
+      "lastName": "Edwards",
+      "email": "bedwards@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33491756",
+      "firstName": "Jessica",
+      "lastName": "Leighton",
+      "email": "jleighton@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33491758",
+      "firstName": "Paul J",
+      "lastName": "Powell",
+      "email": "pjpowell@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33497774",
+      "firstName": "Chris",
+      "lastName": "Steele",
+      "email": "csteele@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33497775",
+      "firstName": "Roxanne",
+      "lastName": "Sullivan",
+      "email": "rsullivan@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33498432",
+      "firstName": "Dominic",
+      "lastName": "Dymond",
+      "email": "ddymond@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33500932",
+      "firstName": "Vanessa",
+      "lastName": "Simmons",
+      "email": "vsimmons@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33501355",
+      "firstName": "Chris",
+      "lastName": "Williams",
+      "email": "cwilliams@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33520929",
+      "firstName": "Samuel",
+      "lastName": "Wing",
+      "email": "swing@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33527666",
+      "firstName": "Charles",
+      "lastName": "Weston",
+      "email": "cweston@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33527892",
+      "firstName": "Jonathan",
+      "lastName": "Goodwin",
+      "email": "jgoodwin@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33528375",
+      "firstName": "Beth",
+      "lastName": "O'Connell",
+      "email": "boconnell@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33528643",
+      "firstName": "Nadine",
+      "lastName": "Gonzalez",
+      "email": "ngonzalez@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33529136",
+      "firstName": "Jason",
+      "lastName": "Larkin",
+      "email": "jlarkin@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33529746",
+      "firstName": "Jolene",
+      "lastName": "Greer",
+      "email": "jgreer@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33530178",
+      "firstName": "Carlie",
+      "lastName": "Proto",
+      "email": "cproto@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33532282",
+      "firstName": "Joshua",
+      "lastName": "Crockett",
+      "email": "jcrockett@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33533110",
+      "firstName": "Robert",
+      "lastName": "Doyle",
+      "email": "rdoyle@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33533203",
+      "firstName": "Dylan",
+      "lastName": "Leary",
+      "email": "dleary@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33534664",
+      "firstName": "Becky",
+      "lastName": "Gerrish",
+      "email": "bgerrish@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Subcontractor",
+          "customName": "Subcontractor"
+        }
+      ]
+    },
+    {
+      "id": "33535784",
+      "firstName": "Paul",
+      "lastName": "Roux",
+      "email": "proux@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33535785",
+      "firstName": "Joshua",
+      "lastName": "Ammon",
+      "email": "jammon@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33536303",
+      "firstName": "Rick",
+      "lastName": "Smith",
+      "email": "rsmith@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33536558",
+      "firstName": "Beth",
+      "lastName": "Dow",
+      "email": "bdow@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33538043",
+      "firstName": "David",
+      "lastName": "Durost",
+      "email": "ddurost@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33538254",
+      "firstName": "Ross",
+      "lastName": "Shults",
+      "email": "rshults@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33538650",
+      "firstName": "Dana",
+      "lastName": "Harper",
+      "email": "dharper@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33538952",
+      "firstName": "Leo",
+      "lastName": "Jennings",
+      "email": "ljennings@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33539483",
+      "firstName": "Laceylyn",
+      "lastName": "Lang",
+      "email": "llang@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33540313",
+      "firstName": "Rikki",
+      "lastName": "Charest",
+      "email": "charestrikki@gmail.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33542090",
+      "firstName": "Jennifer",
+      "lastName": "Morrell",
+      "email": "jmorrell@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33542107",
+      "firstName": "Aric",
+      "lastName": "Rivkin",
+      "email": "arivkin@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33542108",
+      "firstName": "Joseph",
+      "lastName": "Szymanski",
+      "email": "jszymanski@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33544608",
+      "firstName": "Keith",
+      "lastName": "Atkins",
+      "email": "katkins@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33545372",
+      "firstName": "Joshua",
+      "lastName": "Drucker",
+      "email": "jdrucker@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Subcontractor",
+          "customName": "Subcontractor"
+        }
+      ]
+    },
+    {
+      "id": "33547179",
+      "firstName": "Travis",
+      "lastName": "Michaud",
+      "email": "tmichaud@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33547310",
+      "firstName": "Delanie",
+      "lastName": "Coy",
+      "email": "dcoy@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33547916",
+      "firstName": "Kim",
+      "lastName": "Cunningham",
+      "email": "kcunningham@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33548619",
+      "firstName": "Justin",
+      "lastName": "Gray",
+      "email": "jgray@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33551554",
+      "firstName": "Noah",
+      "lastName": "Bates",
+      "email": "nbates@applaincerc.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33552880",
+      "firstName": "Joseph",
+      "lastName": "Dow",
+      "email": "jdow@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33552969",
+      "firstName": "Elizabeth",
+      "lastName": "Noble",
+      "email": "Enoble@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33553227",
+      "firstName": "Justin",
+      "lastName": "Henderson",
+      "email": "jhenderson@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33554529",
+      "firstName": "Venessa",
+      "lastName": "Bernier",
+      "email": "vbernier@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33554672",
+      "firstName": "Bradley",
+      "lastName": "Lake",
+      "email": "blake@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33554673",
+      "firstName": "Eric",
+      "lastName": "King",
+      "email": "eking@menhcomputers.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33554948",
+      "firstName": "Alanna",
+      "lastName": "Haines",
+      "email": "ahaines@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33556080",
+      "firstName": "Justin",
+      "lastName": "Crowder",
+      "email": "jcrowder@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33556699",
+      "firstName": "Glenn",
+      "lastName": "Myers",
+      "email": "gmyers@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33558096",
+      "firstName": "Lee",
+      "lastName": "Castillo",
+      "email": "jcastillo@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33558146",
+      "firstName": "Danny",
+      "lastName": "Marquez",
+      "email": "dmarquez@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        },
+        {
+          "id": null,
+          "name": "Service Manager",
+          "customName": "Service Manager"
+        }
+      ]
+    },
+    {
+      "id": "33560443",
+      "firstName": "Damian",
+      "lastName": "Ducharme",
+      "email": "dducharme@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33561113",
+      "firstName": "Garrett",
+      "lastName": "Jones",
+      "email": "gjones@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33566096",
+      "firstName": "Jennifer",
+      "lastName": "Miner",
+      "email": "jminer@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Sales",
+          "customName": "Sales"
+        },
+        {
+          "id": null,
+          "name": "Scheduler",
+          "customName": "Scheduler"
+        }
+      ]
+    },
+    {
+      "id": "33569456",
+      "firstName": "Jayson",
+      "lastName": "Tatu",
+      "email": "jtatu@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33571359",
+      "firstName": "Dean",
+      "lastName": "Blanchard",
+      "email": "dblanchard@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33571509",
+      "firstName": "Matthew",
+      "lastName": "Littlefield",
+      "email": "mlittlefield@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33572053",
+      "firstName": "Jeffrey",
+      "lastName": "Spellman",
+      "email": "JSpellman@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Technician",
+          "customName": "Technician"
+        }
+      ]
+    },
+    {
+      "id": "33572410",
+      "firstName": "Cody",
+      "lastName": "Welsh",
+      "email": "cwelsh@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33573082",
+      "firstName": "Caleb",
+      "lastName": "Cox",
+      "email": "ccox@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33575613",
+      "firstName": "Ben",
+      "lastName": "Adams",
+      "email": "badams@arcofmaine.com",
+      "inactive": true,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    },
+    {
+      "id": "33576694",
+      "firstName": "Joshua",
+      "lastName": "Twitchell",
+      "email": "jtwitchell@arcofmaine.com",
+      "inactive": false,
+      "userType": "Standard",
+      "roles": [
+        {
+          "id": null,
+          "name": "Lead Technician",
+          "customName": "Lead Technician"
+        }
+      ]
+    }
+  ]
+}
