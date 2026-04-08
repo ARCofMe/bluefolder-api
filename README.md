@@ -55,11 +55,27 @@ BLUEFOLDER_ENV_PATH=/path/to/.env
 
 Authentication uses HTTP Basic with your API key as the username and `x` as the password, matching BlueFolder's official API examples. All calls use a default 30s timeout; override by passing `timeout=` into `BlueFolderBase` subclasses if you wrap or extend them, or set `BLUEFOLDER_TIMEOUT_SECONDS`.
 
+Hardening knobs:
+- `BLUEFOLDER_TIMEOUT_SECONDS`: request timeout in seconds
+- `BLUEFOLDER_RETRY_TOTAL`: transient HTTP retry count for safe/read-style actions
+- `BLUEFOLDER_RETRY_BACKOFF`: retry backoff base in seconds
+- `BLUEFOLDER_RETRY_MUTATIONS=true`: allow retries for add/edit/delete style actions
+- `BLUEFOLDER_EMPTY_RESPONSE_RETRY_TOTAL`: retry count for empty XML responses
+- `BLUEFOLDER_HOST_HEADER`: optional upstream host header when routing through a proxy/IP
+- `BLUEFOLDER_MAX_ATTACHMENT_BYTES`: maximum decoded upload size for attachments
+- `BLUEFOLDER_DISABLE_GENERIC_HELPERS=true`: block legacy generic `get/list/create/update` helpers unless a domain overrides them with a documented payload shape
+
 Attachments are served from a shared BlueFolder host by default (`https://api.bluefolder.com/api/2.0`). All other domains default to `https://app.bluefolder.com/api/2.0`, or `https://{account}.bluefolder.com/api/2.0` when `BLUEFOLDER_ACCOUNT_NAME` is set. If you need to route traffic differently, set `BLUEFOLDER_ATTACHMENTS_BASE_URL` (or `BLUEFOLDER_BASE_URL` for a global override) or pass `base_url` when instantiating `BlueFolderAttachments`.
 
 You can configure the client either via `BLUEFOLDER_ACCOUNT_NAME`, by passing `base_url` explicitly, or by relying on the official shared host `https://app.bluefolder.com/api/2.0`. If `base_url` is a standard host like `https://myaccount.bluefolder.com/api/2.0`, the client can infer the account name from the URL. If `base_url` is a custom proxy, set `BLUEFOLDER_HOST_HEADER` when your proxy requires a specific upstream host header.
 
 Some BlueFolder tenants do not expose every undocumented endpoint. This library now prefers the documented customer contact routes under `/customers/*Contact.aspx` and falls back to `/customers/get.aspx` when it needs to enumerate a customer's contacts.
+
+The client now raises typed exceptions for common failure classes:
+- `BlueFolderAuthError`
+- `BlueFolderRateLimitError`
+- `BlueFolderUnsupportedEndpointError`
+- `BlueFolderInvalidResponseError`
 
 ```python
 from bluefolder_api.client import BlueFolderClient

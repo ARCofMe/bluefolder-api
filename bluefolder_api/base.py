@@ -1,5 +1,6 @@
 """Base abstractions shared by the BlueFolder domain clients."""
 
+import itertools
 import os
 import logging
 import xml.etree.ElementTree as ET
@@ -75,6 +76,7 @@ load_dotenv(dotenv_path=env_path)
 # Logging
 # -----------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
+_REQUEST_COUNTER = itertools.count(1)
 
 DEFAULT_BASE_URL = "https://app.bluefolder.com/api/2.0"
 
@@ -199,6 +201,9 @@ class BlueFolderBase(ABC):
                 pool_maxsize = int(os.getenv("BLUEFOLDER_POOL_MAXSIZE") or 20)
                 retry = Retry(
                     total=retry_total,
+                    connect=retry_total,
+                    read=retry_total,
+                    status=0,
                     backoff_factor=retry_backoff,
                     status_forcelist=[429, 500, 502, 503, 504],
                     allowed_methods=["POST"],
@@ -227,6 +232,165 @@ class BlueFolderBase(ABC):
         if self._host_header:
             headers["Host"] = self._host_header
         return headers
+
+    def _capability_cache(self) -> dict[str, bool]:
+        """Return a shared per-client capability cache."""
+        cache = getattr(self.client, "_capability_cache", None)
+        if cache is None:
+            cache = {}
+            if self.client is not None:
+                self.client._capability_cache = cache
+            else:
+                self._capability_cache_local = getattr(self, "_capability_cache_local", {})
+                cache = self._capability_cache_local
+        return cache
+
+    def _mark_endpoint_unavailable(self, capability: str) -> None:
+        self._capability_cache()[capability] = False
+
+    def _endpoint_is_unavailable(self, capability: str) -> bool:
+        return self._capability_cache().get(capability) is False
+
+    def _legacy_generic_helpers_disabled(self) -> bool:
+        return os.getenv("BLUEFOLDER_DISABLE_GENERIC_HELPERS", "").lower() in {"1", "true", "yes"}
+
+    def _warn_or_block_generic_helper(self, helper_name: str) -> None:
+        if self._legacy_generic_helpers_disabled():
+            raise NotImplementedError(
+                f"{self.__class__.__name__}.{helper_name}() uses the legacy generic request builder. "
+                "Override it with a documented request shape or unset BLUEFOLDER_DISABLE_GENERIC_HELPERS."
+            )
+        logger.warning(
+            "%s.%s() is using the legacy generic BlueFolder request helper. "
+            "Prefer a domain-specific wrapper payload.",
+            self.__class__.__name__,
+            helper_name,
+        )
+
+    def _is_retryable_action(self, action: str) -> bool:
+        normalized = (action or "").lower()
+        mutating = any(token in normalized for token in ("add", "edit", "delete", "complete"))
+        if not mutating:
+            return True
+        return os.getenv("BLUEFOLDER_RETRY_MUTATIONS", "").lower() in {"1", "true", "yes"}
+
+    @staticmethod
+    def _response_snippet(response) -> str:
+        text = getattr(response, "text", None)
+        if text is None:
+            content = getattr(response, "content", b"")
+            if isinstance(content, bytes):
+                text = content[:500].decode("utf-8", errors="replace")
+            else:
+                text = str(content)
+        return str(text).strip()[:500]
+
+    def _build_request_url(self, action: str, override_url: str | None = None) -> str:
+        return override_url or f"{self.base_url.rstrip('/')}/{self.domain}/{action}.aspx"
+
+    def _coerce_xml_payload(self, action: str, xml_data=None, params=None):
+        if xml_data is None:
+            xml_data = self._build_xml_request(action, params)
+        if isinstance(xml_data, dict):
+            xml_data = self._build_xml_request(action, xml_data)
+        return xml_data
+
+    def _raise_http_error(self, response, url: str):
+        from .exceptions import (
+            BlueFolderAuthError,
+            BlueFolderNotFoundError,
+            BlueFolderRateLimitError,
+            BlueFolderRequestError,
+            BlueFolderUnsupportedEndpointError,
+        )
+
+        status = getattr(response, "status_code", None)
+        snippet = self._response_snippet(response)
+        message = f"BlueFolder HTTP {status} for {url}: {snippet}".strip()
+        if status in (401, 403):
+            raise BlueFolderAuthError(message, status_code=status, url=url)
+        if status == 404:
+            if url.endswith(".aspx"):
+                raise BlueFolderUnsupportedEndpointError(message, status_code=status, url=url)
+            raise BlueFolderNotFoundError(message, status_code=status, url=url)
+        if status == 429:
+            retry_after = None
+            headers = getattr(response, "headers", {}) or {}
+            try:
+                retry_after = float(headers.get("Retry-After")) if headers.get("Retry-After") else None
+            except Exception:
+                retry_after = None
+            raise BlueFolderRateLimitError(
+                message,
+                status_code=status,
+                url=url,
+                retry_after=retry_after,
+            )
+        raise BlueFolderRequestError(message, status_code=status, url=url)
+
+    def _perform_request(self, url: str, payload, headers: dict[str, str], action: str):
+        request_id = next(_REQUEST_COUNTER)
+        retry_total = int(os.getenv("BLUEFOLDER_RETRY_TOTAL") or 3)
+        retry_backoff = float(os.getenv("BLUEFOLDER_RETRY_BACKOFF") or 1)
+        attempts = retry_total + 1 if self._is_retryable_action(action) else 1
+        last_response = None
+
+        for attempt in range(1, attempts + 1):
+            payload_preview = payload.decode() if isinstance(payload, (bytes, bytearray)) else str(payload)
+            logger.debug(
+                "BlueFolder request id=%s attempt=%s action=%s url=%s payload=%s",
+                request_id,
+                attempt,
+                action,
+                url,
+                payload_preview,
+            )
+            started = time.monotonic()
+            response = self.session.post(
+                url,
+                data=payload,
+                headers=headers,
+                timeout=self.timeout,
+            )
+            elapsed_ms = int((time.monotonic() - started) * 1000)
+            last_response = response
+            logger.debug(
+                "BlueFolder response id=%s status=%s duration_ms=%s body=%s",
+                request_id,
+                getattr(response, "status_code", "n/a"),
+                elapsed_ms,
+                self._response_snippet(response),
+            )
+            if getattr(response, "status_code", None) == 200:
+                return response
+
+            should_retry = (
+                attempt < attempts
+                and getattr(response, "status_code", None) in {429, 500, 502, 503, 504}
+            )
+            if should_retry:
+                retry_after = None
+                headers_in = getattr(response, "headers", {}) or {}
+                try:
+                    retry_after = float(headers_in.get("Retry-After")) if headers_in.get("Retry-After") else None
+                except Exception:
+                    retry_after = None
+                sleep_for = retry_after if retry_after is not None else retry_backoff * attempt
+                logger.warning(
+                    "BlueFolder transient HTTP %s for %s, retrying in %.2fs (%s/%s).",
+                    getattr(response, "status_code", "n/a"),
+                    url,
+                    sleep_for,
+                    attempt,
+                    attempts - 1,
+                )
+                time.sleep(sleep_for)
+                continue
+
+            logger.error("Error %s: %s", getattr(response, "status_code", "n/a"), self._response_snippet(response))
+            self._raise_http_error(response, url)
+
+        self._raise_http_error(last_response, url)
 
     # -------------------------------------------------------------------------
     # XML request builders and POST handlers
@@ -293,30 +457,16 @@ class BlueFolderBase(ABC):
         HTTPError
             If a non-200 HTTP status is returned.
         """
-        url = override_url or f"{self.base_url.rstrip('/')}/{self.domain}/{action}.aspx"
+        from .exceptions import BlueFolderInvalidResponseError
 
-        if xml_data is None:
-            xml_data = self._build_xml_request(action, params)
-
-        # if tests pass a dict → build xml
-        if isinstance(xml_data, dict):
-            xml_data = self._build_xml_request(action, xml_data)
-
-        payload_preview = xml_data.decode() if isinstance(xml_data, (bytes, bytearray)) else str(xml_data)
-        logger.debug(f"POST → {url}\n{payload_preview}")
+        url = self._build_request_url(action, override_url)
+        xml_data = self._coerce_xml_payload(action, xml_data=xml_data, params=params)
         hdrs = self._auth_headers()
-
-        response = self.session.post(
-            url, data=xml_data, headers=hdrs, timeout=self.timeout
-        )
-        logger.debug(f"Status: {response.status_code}\nResponse:\n{response.text}")
-
-        if response.status_code != 200:
-            logger.error(f"Error {response.status_code}: {response.text}")
-            response.raise_for_status()
+        response = self._perform_request(url, xml_data, hdrs, action)
 
         empty_retry_total = int(os.getenv("BLUEFOLDER_EMPTY_RESPONSE_RETRY_TOTAL") or 2)
         empty_retry_backoff = float(os.getenv("BLUEFOLDER_EMPTY_RESPONSE_RETRY_BACKOFF") or 0.25)
+        can_retry_empty = self._is_retryable_action(action)
 
         for attempt in range(empty_retry_total + 1):
             try:
@@ -326,7 +476,7 @@ class BlueFolderBase(ABC):
                 resp_text = getattr(response, "text", "")
                 resp_status = getattr(response, "status_code", "n/a")
                 is_empty_response = not str(resp_text).strip()
-                should_retry = is_empty_response and attempt < empty_retry_total
+                should_retry = is_empty_response and can_retry_empty and attempt < empty_retry_total
 
                 if should_retry:
                     logger.warning(
@@ -338,9 +488,7 @@ class BlueFolderBase(ABC):
                         empty_retry_total,
                     )
                     time.sleep(empty_retry_backoff * (attempt + 1))
-                    response = self.session.post(
-                        url, data=xml_data, headers=hdrs, timeout=self.timeout
-                    )
+                    response = self._perform_request(url, xml_data, hdrs, action)
                     continue
 
                 log_message = "Invalid XML from %s (status=%s, headers=%s):\n%s"
@@ -349,7 +497,14 @@ class BlueFolderBase(ABC):
                     logger.warning(*((log_message,) + log_args))
                 else:
                     logger.error(*((log_message,) + log_args))
-                raise RuntimeError("Invalid XML response") from e
+                raise BlueFolderInvalidResponseError("Invalid XML response") from e
+
+    def _post_response(self, action: str, xml_data=None, params=None, override_url: str = None):
+        """Perform a POST and return the raw response object."""
+        url = self._build_request_url(action, override_url)
+        xml_data = self._coerce_xml_payload(action, xml_data=xml_data, params=params)
+        hdrs = self._auth_headers()
+        return self._perform_request(url, xml_data, hdrs, action)
 
     # -------------------------------------------------------------------------
     def _post_raw(self, endpoint: str, xml_body: str):
@@ -374,11 +529,7 @@ class BlueFolderBase(ABC):
         headers = self._auth_headers()
         logger.debug(f"POST → {url}\n{xml_body}")
 
-        response = self.session.post(
-            url, data=xml_body.encode("utf-8"), headers=headers, timeout=self.timeout
-        )
-        if hasattr(response, "raise_for_status"):
-            response.raise_for_status()
+        response = self._perform_request(url, xml_body.encode("utf-8"), headers, endpoint)
         return response.text
 
     # -------------------------------------------------------------------------
@@ -386,18 +537,22 @@ class BlueFolderBase(ABC):
     # -------------------------------------------------------------------------
     def get(self, params: dict = None):
         """Perform a standard `get` operation."""
+        self._warn_or_block_generic_helper("get")
         return self._post("get", params=params)
 
     def list(self, params: dict = None):
         """Perform a standard `list` operation."""
+        self._warn_or_block_generic_helper("list")
         return self._post("list", params=params)
 
     def create(self, params: dict):
         """Perform a standard `add` (create) operation."""
+        self._warn_or_block_generic_helper("create")
         return self._post("add", params=params)
 
     def update(self, params: dict):
         """Perform a standard `edit` (update) operation."""
+        self._warn_or_block_generic_helper("update")
         return self._post("edit", params=params)
 
     # Uncomment if your API supports deletes:

@@ -1,20 +1,27 @@
 import xml.etree.ElementTree as ET
 
 from bluefolder_api.attachments import BlueFolderAttachments
+from bluefolder_api.exceptions import BlueFolderInvalidResponseError
 from bluefolder_api.service_requests import BlueFolderServiceRequests
 
 
 class DummySession:
     def __init__(self):
         self.calls = []
+        self.next_response = None
 
     def post(self, url, data=None, headers=None, timeout=None):
-        self.calls.append({"url": url, "data": data})
+        self.calls.append({"url": url, "data": data, "headers": headers, "timeout": timeout})
+        if self.next_response is not None:
+            response = self.next_response
+            self.next_response = None
+            return response
 
         class Resp:
             status_code = 200
             content = b"<response status='ok'></response>"
             text = "<response status='ok'></response>"
+            headers = {}
 
         return Resp()
 
@@ -128,3 +135,44 @@ def test_list_for_service_request_includes_required_type_filter():
 
     assert xml.find(".//type").text == "ServiceRequest"
     assert xml.find(".//serviceRequestId").text == "99"
+
+
+def test_add_bytes_to_service_request_sanitizes_name_and_infers_type():
+    att = BlueFolderAttachments(client=DummyClient())
+
+    att.add_bytes_to_service_request(123, "../bad name?.txt", b"file")
+    xml = ET.fromstring(att.session.calls[-1]["data"])
+
+    assert xml.find(".//attachmentFileName").text == ".._bad_name_.txt"
+    assert xml.find(".//attachmentContentType").text == "text/plain"
+
+
+def test_download_returns_binary_payload_when_response_is_not_xml():
+    att = BlueFolderAttachments(client=DummyClient())
+
+    class BinaryResp:
+        status_code = 200
+        content = b"\x89PNG"
+        text = ""
+        headers = {"Content-Type": "image/png"}
+
+    att.session.next_response = BinaryResp()
+    payload = att.download("tok-3")
+    assert payload == b"\x89PNG"
+
+
+def test_download_rejects_empty_payload():
+    att = BlueFolderAttachments(client=DummyClient())
+
+    class EmptyResp:
+        status_code = 200
+        content = b""
+        text = ""
+        headers = {}
+
+    att.session.next_response = EmptyResp()
+    try:
+        att.download("tok-4")
+        assert False, "expected download to fail"
+    except BlueFolderInvalidResponseError:
+        pass

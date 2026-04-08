@@ -36,6 +36,9 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         list[dict]
             List of customer contacts.
         """
+        capability = "customers:get_contacts_from_customer"
+        if self._endpoint_is_unavailable(capability):
+            return []
         try:
             if self.client and hasattr(self.client, "customers"):
                 xml_response = self.client.customers.get_by_id(customer_id)
@@ -43,6 +46,7 @@ class BlueFolderCustomerContacts(BlueFolderBase):
                 xml_response = self._customer_get_fallback(customer_id)
         except Exception as exc:
             if self._is_optional_endpoint_error(exc):
+                self._mark_endpoint_unavailable(capability)
                 logger.warning("Customer contact lookup unavailable for this tenant: %s", exc)
                 return []
             raise
@@ -78,6 +82,9 @@ class BlueFolderCustomerContacts(BlueFolderBase):
         dict
             Contact details dictionary, or empty if not found.
         """
+        capability = "customers:getContact"
+        if self._endpoint_is_unavailable(capability):
+            return {}
         root = ET.Element("request")
         contact_get = ET.SubElement(root, "customerContactGet")
         ET.SubElement(contact_get, "customerContactId").text = str(contact_id)
@@ -91,6 +98,7 @@ class BlueFolderCustomerContacts(BlueFolderBase):
             )
         except Exception as exc:
             if self._is_optional_endpoint_error(exc):
+                self._mark_endpoint_unavailable(capability)
                 logger.warning("Customer contacts get endpoint unavailable for this tenant: %s", exc)
                 return {}
             raise

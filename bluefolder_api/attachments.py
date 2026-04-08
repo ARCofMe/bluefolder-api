@@ -1,7 +1,12 @@
 """Wrapper around the BlueFolder attachments domain."""
 
+import base64
+import mimetypes
+import os
+import re
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
+from .exceptions import BlueFolderInvalidResponseError
 
 
 class BlueFolderAttachments(BlueFolderBase):
@@ -71,6 +76,50 @@ class BlueFolderAttachments(BlueFolderBase):
             )
         return attachments
 
+    @staticmethod
+    def _sanitize_filename(file_name: str) -> str:
+        cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", (file_name or "").strip())
+        return cleaned[:180] or "attachment.bin"
+
+    @staticmethod
+    def _coerce_content_type(file_name: str, content_type: str | None) -> str:
+        if content_type and "/" in content_type:
+            return content_type
+        guessed, _ = mimetypes.guess_type(file_name)
+        return guessed or "application/octet-stream"
+
+    @staticmethod
+    def _max_upload_bytes() -> int:
+        raw = os.getenv("BLUEFOLDER_MAX_ATTACHMENT_BYTES") or str(15 * 1024 * 1024)
+        return int(raw)
+
+    def add_bytes_to_service_request(
+        self,
+        service_request_id: int,
+        file_name: str,
+        file_bytes: bytes,
+        description: str = "",
+        content_type: str | None = None,
+        is_public: bool = False,
+    ):
+        """Add an attachment from raw bytes with validation and normalization."""
+        safe_name = self._sanitize_filename(file_name)
+        safe_type = self._coerce_content_type(safe_name, content_type)
+        payload = file_bytes if isinstance(file_bytes, bytes) else bytes(file_bytes)
+        if len(payload) > self._max_upload_bytes():
+            raise ValueError(
+                f"Attachment {safe_name} is {len(payload)} bytes, above BLUEFOLDER_MAX_ATTACHMENT_BYTES={self._max_upload_bytes()}."
+            )
+        encoded = base64.b64encode(payload).decode("ascii")
+        return self.add_to_service_request(
+            service_request_id=service_request_id,
+            file_name=safe_name,
+            file_data_base64=encoded,
+            description=description,
+            content_type=safe_type,
+            is_public=is_public,
+        )
+
     # -------------------------------------------------------------------------
     def add_to_service_request(
         self,
@@ -100,14 +149,24 @@ class BlueFolderAttachments(BlueFolderBase):
         xml.etree.ElementTree.Element
             Raw XML response.
         """
+        safe_name = self._sanitize_filename(file_name)
+        safe_type = self._coerce_content_type(safe_name, content_type)
+        try:
+            decoded_size = len(base64.b64decode(file_data_base64, validate=True))
+        except Exception as exc:
+            raise ValueError("file_data_base64 must be valid base64 data") from exc
+        if decoded_size > self._max_upload_bytes():
+            raise ValueError(
+                f"Attachment {safe_name} is {decoded_size} bytes, above BLUEFOLDER_MAX_ATTACHMENT_BYTES={self._max_upload_bytes()}."
+            )
         root = ET.Element("request")
         att_add = ET.SubElement(root, "attachmentAdd")
         ET.SubElement(att_add, "serviceRequestId").text = str(service_request_id)
         ET.SubElement(att_add, "isPublic").text = "true" if is_public else "false"
         ET.SubElement(att_add, "attachmentContent").text = file_data_base64
-        ET.SubElement(att_add, "attachmentFileName").text = file_name
+        ET.SubElement(att_add, "attachmentFileName").text = safe_name
         ET.SubElement(att_add, "attachmentDescription").text = description
-        ET.SubElement(att_add, "attachmentContentType").text = content_type
+        ET.SubElement(att_add, "attachmentContentType").text = safe_type
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
         return self._post("add", xml_data=xml_data)
@@ -124,7 +183,13 @@ class BlueFolderAttachments(BlueFolderBase):
         att_get = ET.SubElement(root, "attachmentDownload")
         ET.SubElement(att_get, "attachmentToken").text = str(attachment_token)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
-        return self._post("download", xml_data=xml_data)
+        response = self._post_response("download", xml_data=xml_data)
+        content = getattr(response, "content", b"") or b""
+        if not content:
+            raise BlueFolderInvalidResponseError("Attachment download returned an empty body")
+        if content.lstrip().startswith(b"<"):
+            return ET.fromstring(content)
+        return content
 
     def delete(self, attachment_token: str):
         """Delete an attachment by ID."""

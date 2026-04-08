@@ -77,3 +77,15 @@ def test_contact_get_uses_documented_customers_endpoint():
     contacts = BlueFolderCustomerContacts(client=DummyClient())
     contacts.get_by_id(10)
     assert contacts.session.calls[-1]["url"].endswith("/customers/getContact.aspx")
+
+
+def test_contact_get_skips_repeated_calls_after_missing_endpoint(monkeypatch):
+    contacts = BlueFolderCustomerContacts(client=DummyClient())
+
+    def raise_not_found(*args, **kwargs):
+        raise RuntimeError("404 Client Error: Not Found for url: https://example.bluefolder.com/api/2.0/customers/getContact.aspx")
+
+    monkeypatch.setattr(contacts, "_post", raise_not_found)
+
+    assert contacts.get_by_id(10) == {}
+    assert contacts.get_by_id(10) == {}

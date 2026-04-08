@@ -81,6 +81,7 @@ class BlueFolderClient:
 
         # Create a single persistent HTTP session (shared across all domains)
         self.session = requests.Session()
+        self._capability_cache: dict[str, bool] = {}
 
         logger.debug("Initialized BlueFolderClient with base_url=%s", self.base_url)
 

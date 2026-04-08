@@ -6,6 +6,11 @@ import base64
 import xml.etree.ElementTree as ET
 import pytest
 from bluefolder_api.base import BlueFolderBase
+from bluefolder_api.exceptions import (
+    BlueFolderAuthError,
+    BlueFolderRateLimitError,
+    BlueFolderUnsupportedEndpointError,
+)
 
 
 class DummyDomain(BlueFolderBase):
@@ -157,3 +162,54 @@ def test_auth_headers_use_api_token_with_docs_password():
     headers = d._auth_headers()
     token = headers["Authorization"].split(" ", 1)[1]
     assert base64.b64decode(token).decode() == "test-key:x"
+
+
+def test_404_raises_typed_unsupported_endpoint(monkeypatch):
+    d = DummyDomain()
+
+    class MissingResp:
+        status_code = 404
+        content = b"missing"
+        text = "missing"
+        headers = {}
+
+    monkeypatch.setattr("bluefolder_api.base.requests.post", lambda *a, **kw: MissingResp())
+    monkeypatch.setattr("bluefolder_api.base.requests.Session.post", lambda *a, **kw: MissingResp())
+
+    with pytest.raises(BlueFolderUnsupportedEndpointError):
+        d._post("list", {"foo": "bar"})
+
+
+def test_401_raises_typed_auth_error(monkeypatch):
+    d = DummyDomain()
+
+    class AuthResp:
+        status_code = 401
+        content = b"nope"
+        text = "nope"
+        headers = {}
+
+    monkeypatch.setattr("bluefolder_api.base.requests.post", lambda *a, **kw: AuthResp())
+    monkeypatch.setattr("bluefolder_api.base.requests.Session.post", lambda *a, **kw: AuthResp())
+
+    with pytest.raises(BlueFolderAuthError):
+        d._post("list", {"foo": "bar"})
+
+
+def test_429_raises_typed_rate_limit_error(monkeypatch):
+    d = DummyDomain()
+
+    class LimitResp:
+        status_code = 429
+        content = b"slow down"
+        text = "slow down"
+        headers = {"Retry-After": "5"}
+
+    monkeypatch.setattr("bluefolder_api.base.requests.post", lambda *a, **kw: LimitResp())
+    monkeypatch.setattr("bluefolder_api.base.requests.Session.post", lambda *a, **kw: LimitResp())
+    monkeypatch.setenv("BLUEFOLDER_RETRY_TOTAL", "0")
+
+    with pytest.raises(BlueFolderRateLimitError) as exc:
+        d._post("list", {"foo": "bar"})
+
+    assert exc.value.retry_after == 5.0

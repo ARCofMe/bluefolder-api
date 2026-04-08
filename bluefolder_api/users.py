@@ -141,13 +141,15 @@ class BlueFolderUsers(BlueFolderBase):
             A list of role names (e.g. ["Technician", "Dispatcher", "Administrator"]),
             or an empty list if unsupported or empty.
         """
+        capability = "users:listRoles"
+        if self._endpoint_is_unavailable(capability):
+            return []
         try:
             xml_response = self._post("listRoles")
         except Exception as e:
             # Not all tenants or API versions support this endpoint
-            import logging
-
-            logging.warning(f"User roles endpoint not supported: {e}")
+            self._mark_endpoint_unavailable(capability)
+            logger.warning("User roles endpoint not supported: %s", e)
             return []
 
         roles = [r.text for r in xml_response.findall(".//role")]
