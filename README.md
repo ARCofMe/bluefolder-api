@@ -83,6 +83,8 @@ You can also pipe the raw HTML snippet directly:
 pbpaste | PYTHONPATH=. python scripts/update_status_inventory_from_html.py
 ```
 
+The resulting `bluefolder_status_inventory.json` file is intentionally treated as a local tenant artifact, not library-owned source. The repo ships [bluefolder_status_inventory.example.json](/home/ner0tic/Documents/Projects/ARCoM/bluefolder-api/bluefolder_status_inventory.example.json) only as a schema hint.
+
 The client now raises typed exceptions for common failure classes:
 - `BlueFolderAuthError`
 - `BlueFolderRateLimitError`

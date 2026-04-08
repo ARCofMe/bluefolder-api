@@ -8,3 +8,4 @@ cache/
 .cache/
 *.old
 docs/bluefolder_api/
+bluefolder_status_inventory.json
