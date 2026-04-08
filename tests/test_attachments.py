@@ -161,6 +161,27 @@ def test_download_returns_binary_payload_when_response_is_not_xml():
     assert payload == b"\x89PNG"
 
 
+def test_download_content_uses_binary_response_headers_when_available():
+    att = BlueFolderAttachments(client=DummyClient())
+
+    class BinaryResp:
+        status_code = 200
+        content = b"abc"
+        text = ""
+        headers = {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": 'attachment; filename="ticket.pdf"',
+        }
+
+    att.session.next_response = BinaryResp()
+    payload = att.download_content("tok-binary")
+
+    assert payload["content"] == b"abc"
+    assert payload["content_type"] == "application/pdf"
+    assert payload["file_name"] == "ticket.pdf"
+    assert payload["source"] == "binary"
+
+
 def test_download_rejects_empty_payload():
     att = BlueFolderAttachments(client=DummyClient())
 

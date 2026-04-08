@@ -4,6 +4,7 @@ import base64
 import mimetypes
 import os
 import re
+from email.message import Message
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
 from .exceptions import BlueFolderInvalidResponseError
@@ -195,10 +196,20 @@ class BlueFolderAttachments(BlueFolderBase):
         """Download one attachment and normalize the payload into bytes plus metadata."""
         payload = self.download(attachment_token)
         if isinstance(payload, (bytes, bytearray)):
+            headers = getattr(getattr(self, "session", None), "last_response_headers", None)
+            content_type = None
+            file_name = None
+            if isinstance(headers, dict):
+                content_type = headers.get("Content-Type")
+                disposition = headers.get("Content-Disposition")
+                if disposition:
+                    message = Message()
+                    message["content-disposition"] = disposition
+                    file_name = message.get_param("filename", header="content-disposition")
             return {
                 "content": bytes(payload),
-                "content_type": None,
-                "file_name": None,
+                "content_type": content_type,
+                "file_name": file_name,
                 "source": "binary",
             }
 

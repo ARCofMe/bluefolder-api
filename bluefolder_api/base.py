@@ -352,6 +352,10 @@ class BlueFolderBase(ABC):
                 headers=headers,
                 timeout=self.timeout,
             )
+            try:
+                self.session.last_response_headers = dict(getattr(response, "headers", {}) or {})
+            except Exception:
+                self.session.last_response_headers = {}
             elapsed_ms = int((time.monotonic() - started) * 1000)
             last_response = response
             logger.debug(
