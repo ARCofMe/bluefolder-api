@@ -160,6 +160,8 @@ class BlueFolderServiceRequests(BlueFolderBase):
                 {
                     "id": sr.findtext("id"),
                     "subject": sr.findtext("subject"),
+                    "status": sr.findtext("serviceRequestStatus"),
+                    "statusName": sr.findtext("serviceRequestStatusName"),
                     "customerId": sr.findtext("customerId"),
                     "externalId": sr.findtext("externalId"),
                     "address": sr.findtext("locationAddress"),
@@ -221,6 +223,8 @@ class BlueFolderServiceRequests(BlueFolderBase):
                 {
                     "id": sr.findtext("id"),
                     "subject": sr.findtext("subject"),
+                    "status": sr.findtext("serviceRequestStatus"),
+                    "statusName": sr.findtext("serviceRequestStatusName"),
                     "customerId": sr.findtext("customerId"),
                     "externalId": sr.findtext("externalId"),
                     "address": sr.findtext("locationAddress"),

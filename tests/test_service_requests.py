@@ -85,3 +85,41 @@ def test_add_comment(sr):
     assert xml.find(".//comment").text == "hello"
     assert xml.find(".//userId").text == "42"
     assert xml.find(".//commentIsPublic").text == "true"
+
+
+def test_list_for_range_includes_status_fields(sr, monkeypatch):
+    response = ET.fromstring(
+        """
+        <response status="ok">
+          <serviceRequests>
+            <serviceRequest>
+              <id>123</id>
+              <subject>Test SR</subject>
+              <serviceRequestStatus>Need Parts/Schedule</serviceRequestStatus>
+              <serviceRequestStatusName>Need Parts/Schedule</serviceRequestStatusName>
+              <customerId>456</customerId>
+            </serviceRequest>
+          </serviceRequests>
+        </response>
+        """
+    )
+    monkeypatch.setattr(sr, "_post", lambda action, xml_data=None: response)
+
+    rows = sr.list_for_range("2026.04.01 12:00 AM", "2026.04.08 11:59 PM")
+
+    assert rows == [
+        {
+            "id": "123",
+            "subject": "Test SR",
+            "status": "Need Parts/Schedule",
+            "statusName": "Need Parts/Schedule",
+            "customerId": "456",
+            "externalId": None,
+            "address": None,
+            "city": None,
+            "state": None,
+            "zip": None,
+            "start": None,
+            "end": None,
+        }
+    ]

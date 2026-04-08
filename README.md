@@ -71,6 +71,18 @@ You can configure the client either via `BLUEFOLDER_ACCOUNT_NAME`, by passing `b
 
 Some BlueFolder tenants do not expose every undocumented endpoint. This library now prefers the documented customer contact routes under `/customers/*Contact.aspx` and falls back to `/customers/get.aspx` when it needs to enumerate a customer's contacts.
 
+For tenant-only SR status catalogs that are only exposed in the BlueFolder UI dropdown, use:
+
+```bash
+PYTHONPATH=. python scripts/update_status_inventory_from_html.py path/to/status_dropdown.html
+```
+
+You can also pipe the raw HTML snippet directly:
+
+```bash
+pbpaste | PYTHONPATH=. python scripts/update_status_inventory_from_html.py
+```
+
 The client now raises typed exceptions for common failure classes:
 - `BlueFolderAuthError`
 - `BlueFolderRateLimitError`

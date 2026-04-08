@@ -1,0 +1,199 @@
+{
+  "generated_at": "2026-04-08",
+  "purpose": "Inferred BlueFolder service request and assignment status inventory for ARCoM integrations.",
+  "authoritative_note": "BlueFolder API 2.0 docs do not appear to expose a dedicated endpoint that returns the allowed service request or assignment statuses as a catalog. This file separates documented filters from statuses observed in this codebase and tenant-facing workflow logic.",
+  "sources": {
+    "docs": [
+      {
+        "label": "BlueFolder API 2.0 index",
+        "url": "https://support.bluefolder.com/hc/en-us/sections/200381849-API-2-0"
+      },
+      {
+        "label": "Service Requests API",
+        "url": "https://support.bluefolder.com/hc/en-us/articles/202885579-Service-Requests-API"
+      },
+      {
+        "label": "Assignments API",
+        "url": "https://support.bluefolder.com/hc/en-us/articles/203611485-Assignments-API"
+      },
+      {
+        "label": "Tenant SR status dropdown",
+        "url": "srUpdate.aspx?type=status",
+        "note": "Status options captured from the BlueFolder SR update page HTML select element for this tenant."
+      }
+    ],
+    "workspace_refs": [
+      "/home/ner0tic/Documents/Projects/ARCoM/ops-hub/tests/test_workflow_state.py",
+      "/home/ner0tic/Documents/Projects/ARCoM/ops-hub/tests/test_technician_api.py",
+      "/home/ner0tic/Documents/Projects/ARCoM/ops-hub/src/ops_hub/services/dispatch.py",
+      "/home/ner0tic/Documents/Projects/ARCoM/ARCoMTechApp/app/src/main/java/com/example/arcomtechapp/workflow/JobWorkflow.kt",
+      "/home/ner0tic/Documents/Projects/ARCoM/ops-hub/src/ops_hub/core/config.py"
+    ]
+  },
+  "service_request": {
+    "tenant_ui_status_options": [
+      "New",
+      "OOW 24HR Hold",
+      "In-Process",
+      "Completed",
+      "UNABLE TO COMPLETE",
+      "ENGINEERING REVIEW",
+      "NEED PARTS/SCHEDULE",
+      "Quote Needed",
+      "CANCELLED",
+      "BOS REVIEW",
+      "Waiting on CX",
+      "TRIAGE/LEFT VM",
+      "WAITING FOR BOS",
+      "FOLLOW UP",
+      "WAITING FOR PAYMENT",
+      "SCHEDULE/LEFT VM",
+      "LEFT VM/FOLLOW UP",
+      "CALL CX",
+      "Scheduled",
+      "NEED TO RESCHEDULE",
+      "Waiting Parts",
+      "Check Tracking",
+      "BACKORDERED",
+      "SEALED SYSTEM RPR",
+      "SUBMIT ORDER",
+      "ESCALATION REVIEW",
+      "Waiting Authorization",
+      "TRADECARE",
+      "Whirlpool TBC",
+      "SAW REQUESTED",
+      "CLAIM REVIEW",
+      "RC REVIEW",
+      "LOWES-HD",
+      "ORDER PARTS(Scheduled)",
+      "DANNY TRIAGE",
+      "TV TRIAGE",
+      "TV CHECK TRACKING",
+      "Closed"
+    ],
+    "documented_api_filter_values": [
+      {
+        "value": "open",
+        "confidence": "documented",
+        "note": "Service Requests API docs explicitly document status=open as a filter for non-closed work."
+      }
+    ],
+    "observed_status_values": [
+      {
+        "value": "New",
+        "confidence": "inferred",
+        "source": "ops_hub.core.config.service_smith_default_sr_status"
+      },
+      {
+        "value": "Pending",
+        "confidence": "observed_in_tests",
+        "source": "ops-hub/tests/test_technician_api.py"
+      },
+      {
+        "value": "Scheduled",
+        "confidence": "observed_in_tests",
+        "source": "ops-hub/tests/test_technician_api.py"
+      },
+      {
+        "value": "In Progress",
+        "confidence": "observed_in_tests",
+        "source": "ops-hub/tests/test_photo_ingest.py"
+      },
+      {
+        "value": "Completed",
+        "confidence": "observed_in_tests",
+        "source": "ops-hub/tests/test_workflow_state.py"
+      },
+      {
+        "value": "Need Parts/Schedule",
+        "confidence": "observed_in_tests",
+        "source": "ops-hub/tests/test_workflow_state.py"
+      },
+      {
+        "value": "Quote Needed",
+        "confidence": "observed_in_tests",
+        "source": "ops-hub/tests/test_workflow_state.py"
+      },
+      {
+        "value": "Quote Needed - Landlord Approval",
+        "confidence": "observed_in_tests",
+        "source": "ops-hub/tests/test_workflow_state.py"
+      },
+      {
+        "value": "Quote Needed - COD Prepayment",
+        "confidence": "observed_in_tests",
+        "source": "ops-hub/tests/test_workflow_state.py"
+      }
+    ],
+    "workflow_action_keys_not_status_values": [
+      "arrive",
+      "call_ahead",
+      "complete",
+      "enroute",
+      "no_answer",
+      "not_home",
+      "parts",
+      "quote_needed",
+      "reschedule",
+      "start",
+      "unable_to_complete",
+      "work_start"
+    ]
+  },
+  "assignment": {
+    "documented_fields": [
+      {
+        "field": "isComplete",
+        "confidence": "documented",
+        "note": "Assignments API exposes completion state rather than a richer documented status catalog."
+      },
+      {
+        "field": "dateTimeCompleted",
+        "confidence": "documented"
+      },
+      {
+        "field": "completionComment",
+        "confidence": "documented"
+      }
+    ],
+    "documented_date_range_type_values": [
+      "scheduled",
+      "created",
+      "completed"
+    ],
+    "normalized_assignment_status_values_used_in_workspace": [
+      {
+        "value": "scheduled",
+        "confidence": "inferred_from_dispatch_mapping",
+        "source": "/home/ner0tic/Documents/Projects/ARCoM/ops-hub/src/ops_hub/services/dispatch.py"
+      },
+      {
+        "value": "complete",
+        "confidence": "inferred_from_dispatch_mapping",
+        "source": "/home/ner0tic/Documents/Projects/ARCoM/ops-hub/src/ops_hub/services/dispatch.py"
+      }
+    ]
+  },
+  "live_tenant_extract": {
+    "generated_at": "2026-04-08",
+    "service_request": {
+      "scanned_service_requests": 0,
+      "distinct_statuses": []
+    },
+    "assignment": {
+      "sampled_users": 15,
+      "scanned_assignments": 655,
+      "distinct_raw_statuses": [],
+      "distinct_normalized_statuses": [
+        {
+          "value": "complete",
+          "count": 436
+        },
+        {
+          "value": "scheduled",
+          "count": 219
+        }
+      ]
+    }
+  }
+}
