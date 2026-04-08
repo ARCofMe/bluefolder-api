@@ -98,6 +98,10 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
               <serviceRequestStatus>Need Parts/Schedule</serviceRequestStatus>
               <serviceRequestStatusName>Need Parts/Schedule</serviceRequestStatusName>
               <customerId>456</customerId>
+              <assignedTo>
+                <userId>9001</userId>
+                <userId>9002</userId>
+              </assignedTo>
             </serviceRequest>
           </serviceRequests>
         </response>
@@ -121,5 +125,6 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
             "zip": None,
             "start": None,
             "end": None,
+            "userIds": ["9001", "9002"],
         }
     ]

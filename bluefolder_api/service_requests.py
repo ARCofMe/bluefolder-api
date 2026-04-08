@@ -233,6 +233,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
                     "zip": sr.findtext("locationZip"),
                     "start": sr.findtext("dateTimeStart"),
                     "end": sr.findtext("dateTimeEnd"),
+                    "userIds": [u.text for u in sr.findall(".//assignedTo/userId")],
                 }
             )
         return requests
