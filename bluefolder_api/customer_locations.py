@@ -63,6 +63,7 @@ class BlueFolderCustomerLocations(BlueFolderBase):
                 - notes, zone
                 - serviceManagerId, technicianId
         """
+        customer_id = self._validate_positive_id(customer_id, "customer_id")
         root = ET.Element("request")
         loc_list = ET.SubElement(root, "customerLocationList")
         ET.SubElement(loc_list, "customerId").text = str(customer_id)
@@ -72,22 +73,7 @@ class BlueFolderCustomerLocations(BlueFolderBase):
 
         locations = []
         for loc in xml_response.findall(".//customerLocation"):
-            locations.append(
-                {
-                    "id": loc.findtext("customerLocationId"),
-                    "customerId": loc.findtext("customerId"),
-                    "name": loc.findtext("locationName") or "",
-                    "isPrimary": loc.findtext("isPrimary") == "1",
-                    "address": loc.findtext("addressStreet") or "",
-                    "city": loc.findtext("addressCity") or "",
-                    "state": loc.findtext("addressState") or "",
-                    "zip": loc.findtext("addressPostalCode") or "",
-                    "notes": loc.findtext("locationNotes") or "",
-                    "zone": loc.findtext("zone") or "",
-                    "serviceManagerId": loc.findtext("serviceManagerId"),
-                    "technicianId": loc.findtext("technicianId"),
-                }
-            )
+            locations.append(self._parse_location(loc))
         return locations
 
     # -------------------------------------------------------------------------
@@ -108,6 +94,7 @@ class BlueFolderCustomerLocations(BlueFolderBase):
         dict
             Dictionary containing location details (address, city, state, zip, etc.)
         """
+        location_id = self._validate_positive_id(location_id, "location_id")
         root = ET.Element("request")
         loc_get = ET.SubElement(root, "customerLocationGet")
         ET.SubElement(loc_get, "id").text = str(location_id)
@@ -118,20 +105,7 @@ class BlueFolderCustomerLocations(BlueFolderBase):
         if loc is None:
             return {}
 
-        return {
-            "id": loc.findtext("customerLocationId"),
-            "customerId": loc.findtext("customerId"),
-            "name": loc.findtext("locationName") or "",
-            "isPrimary": loc.findtext("isPrimary") == "1",
-            "address": loc.findtext("addressStreet") or "",
-            "city": loc.findtext("addressCity") or "",
-            "state": loc.findtext("addressState") or "",
-            "zip": loc.findtext("addressPostalCode") or "",
-            "notes": loc.findtext("locationNotes") or "",
-            "zone": loc.findtext("zone") or "",
-            "serviceManagerId": loc.findtext("serviceManagerId"),
-            "technicianId": loc.findtext("technicianId"),
-        }
+        return self._parse_location(loc)
 
     # -------------------------------------------------------------------------
     def get_primary_for_customer(self, customer_id: int):
@@ -148,6 +122,7 @@ class BlueFolderCustomerLocations(BlueFolderBase):
         dict | None
             Dictionary of the primary location, or None if not found.
         """
+        customer_id = self._validate_positive_id(customer_id, "customer_id")
         locations = self.get_by_customer_id(customer_id)
         for loc in locations:
             if loc.get("isPrimary"):
@@ -159,6 +134,7 @@ class BlueFolderCustomerLocations(BlueFolderBase):
     # -------------------------------------------------------------------------
     def add(self, customer_id: int, **fields):
         """Add a location to a customer."""
+        customer_id = self._validate_positive_id(customer_id, "customer_id")
         root = ET.Element("request")
         loc_add = ET.SubElement(root, "customerLocationAdd")
         ET.SubElement(loc_add, "customerId").text = str(customer_id)
@@ -175,6 +151,7 @@ class BlueFolderCustomerLocations(BlueFolderBase):
 
     def edit(self, location_id: int, **fields):
         """Edit an existing location."""
+        location_id = self._validate_positive_id(location_id, "location_id")
         root = ET.Element("request")
         loc_edit = ET.SubElement(root, "customerLocationEdit")
         ET.SubElement(loc_edit, "customerLocationId").text = str(location_id)
@@ -191,6 +168,7 @@ class BlueFolderCustomerLocations(BlueFolderBase):
 
     def delete(self, location_id: int):
         """Delete a location."""
+        location_id = self._validate_positive_id(location_id, "location_id")
         root = ET.Element("request")
         loc_del = ET.SubElement(root, "customerLocationDelete")
         ET.SubElement(loc_del, "customerLocationId").text = str(location_id)
@@ -200,3 +178,40 @@ class BlueFolderCustomerLocations(BlueFolderBase):
             xml_data=xml_data,
             override_url=f"{self.base_url}/customers/deleteLocation.aspx",
         )
+
+    @staticmethod
+    def _validate_positive_id(value: int, field_name: str) -> int:
+        try:
+            normalized = int(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{field_name} must be a positive integer") from exc
+        if normalized <= 0:
+            raise ValueError(f"{field_name} must be a positive integer")
+        return normalized
+
+    @staticmethod
+    def _parse_bool(value: str | None) -> bool:
+        return str(value or "").strip().lower() in {"1", "true", "yes", "y"}
+
+    @classmethod
+    def _parse_location(cls, loc: ET.Element) -> dict:
+        address = loc.findtext("addressStreet") or ""
+        city = loc.findtext("addressCity") or ""
+        state = loc.findtext("addressState") or ""
+        zip_code = loc.findtext("addressPostalCode") or ""
+        locality = " ".join(part for part in [city, state, zip_code] if part).strip()
+        return {
+            "id": loc.findtext("customerLocationId"),
+            "customerId": loc.findtext("customerId"),
+            "name": loc.findtext("locationName") or "",
+            "isPrimary": cls._parse_bool(loc.findtext("isPrimary")),
+            "address": address,
+            "city": city,
+            "state": state,
+            "zip": zip_code,
+            "formattedAddress": ", ".join(part for part in [address, locality] if part),
+            "notes": loc.findtext("locationNotes") or "",
+            "zone": loc.findtext("zone") or "",
+            "serviceManagerId": loc.findtext("serviceManagerId"),
+            "technicianId": loc.findtext("technicianId"),
+        }

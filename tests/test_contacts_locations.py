@@ -62,6 +62,41 @@ def test_location_add_edit_delete_xml():
     assert xml.find(".//customerLocationId").text == "21"
 
 
+def test_location_reads_include_formatted_address_and_boolean_primary(monkeypatch):
+    locations = BlueFolderCustomerLocations(client=DummyClient())
+    root = ET.Element("response")
+    loc = ET.SubElement(root, "customerLocation")
+    ET.SubElement(loc, "customerLocationId").text = "9"
+    ET.SubElement(loc, "customerId").text = "42"
+    ET.SubElement(loc, "locationName").text = "Lake House"
+    ET.SubElement(loc, "isPrimary").text = "true"
+    ET.SubElement(loc, "addressStreet").text = "180 E Hebron Rd"
+    ET.SubElement(loc, "addressCity").text = "Hebron"
+    ET.SubElement(loc, "addressState").text = "ME"
+    ET.SubElement(loc, "addressPostalCode").text = "04238"
+
+    monkeypatch.setattr(locations, "_post", lambda *args, **kwargs: root)
+
+    payload = locations.get_location(9)
+
+    assert payload["isPrimary"] is True
+    assert payload["formattedAddress"] == "180 E Hebron Rd, Hebron ME 04238"
+
+
+def test_location_methods_validate_positive_ids():
+    locations = BlueFolderCustomerLocations(client=DummyClient())
+
+    for call in (
+        lambda: locations.get_by_customer_id(0),
+        lambda: locations.get_location(""),
+        lambda: locations.add(-1, locationName="Bad"),
+        lambda: locations.edit(0, locationName="Bad"),
+        lambda: locations.delete(None),
+    ):
+        with pytest.raises(ValueError):
+            call()
+
+
 def test_contact_reads_return_empty_when_endpoint_is_unsupported(monkeypatch):
     contacts = BlueFolderCustomerContacts(client=DummyClient())
 
