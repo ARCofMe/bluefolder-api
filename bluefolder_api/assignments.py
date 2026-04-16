@@ -81,6 +81,11 @@ class BlueFolderAssignments(BlueFolderBase):
                 - created (str)
                 - completed (str)
         """
+        user_id = self._validate_user_id(user_id)
+        start_date = self._validate_date_value(start_date, "start_date")
+        end_date = self._validate_date_value(end_date, "end_date")
+        date_range_type = self._validate_date_range_type(date_range_type)
+
         # Build XML request body
         root = ET.Element("request")
         sr_assign_list = ET.SubElement(root, "serviceRequestAssignmentList")
@@ -111,14 +116,18 @@ class BlueFolderAssignments(BlueFolderBase):
                 {
                     "assignmentId": a.findtext("assignmentId"),
                     "serviceRequestId": a.findtext("serviceRequestId"),
-                    "userIds": [u.text for u in a.findall(".//assignedTo/userId")],
+                    "userIds": [u.text for u in a.findall(".//assignedTo/userId") if u.text],
                     "comment": a.findtext("assignmentComment"),
                     "start": a.findtext("startDate"),
                     "end": a.findtext("endDate"),
-                    "allDay": a.findtext("allDayEvent"),
-                    "isComplete": a.findtext("isComplete"),
+                    "allDay": self._parse_bool(a.findtext("allDayEvent")),
+                    "isComplete": self._parse_bool(a.findtext("isComplete")),
                     "created": a.findtext("dateTimeCreated"),
                     "completed": a.findtext("dateTimeCompleted"),
+                    "address": self._first_text(a, "address", "addressStreet", "customerLocationStreetAddress"),
+                    "city": self._first_text(a, "city", "addressCity", "customerLocationCity"),
+                    "state": self._first_text(a, "state", "addressState", "customerLocationState"),
+                    "zip": self._first_text(a, "zip", "postalCode", "addressPostalCode", "customerLocationPostalCode"),
                 }
             )
 
@@ -147,3 +156,47 @@ class BlueFolderAssignments(BlueFolderBase):
     def list_for_user(self, params: dict):
         """List assignments filtered by userId."""
         return self._post("list", params=params)
+
+    @staticmethod
+    def _validate_user_id(user_id: int) -> int:
+        try:
+            normalized = int(user_id)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("user_id must be a positive integer") from exc
+        if normalized <= 0:
+            raise ValueError("user_id must be a positive integer")
+        return normalized
+
+    @staticmethod
+    def _validate_date_value(value: str, field_name: str) -> str:
+        normalized = str(value or "").strip()
+        if not normalized:
+            raise ValueError(f"{field_name} is required")
+        return normalized
+
+    @staticmethod
+    def _validate_date_range_type(value: str) -> str:
+        normalized = str(value or "scheduled").strip().lower()
+        allowed = {"scheduled", "created", "completed"}
+        if normalized not in allowed:
+            raise ValueError(f"date_range_type must be one of: {', '.join(sorted(allowed))}")
+        return normalized
+
+    @staticmethod
+    def _parse_bool(value: str | None) -> bool | None:
+        if value is None:
+            return None
+        normalized = str(value).strip().lower()
+        if normalized in {"1", "true", "yes", "y"}:
+            return True
+        if normalized in {"0", "false", "no", "n"}:
+            return False
+        return None
+
+    @staticmethod
+    def _first_text(node: ET.Element, *names: str) -> str | None:
+        for name in names:
+            value = node.findtext(name)
+            if value:
+                return value
+        return None
