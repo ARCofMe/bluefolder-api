@@ -137,6 +137,11 @@ class BlueFolderServiceRequests(BlueFolderBase):
                 - start, end
                 - userIds (list[str])
         """
+        user_id = self._validate_positive_id(user_id, "user_id")
+        start_date = self._validate_required_text(start_date, "start_date")
+        end_date = self._validate_required_text(end_date, "end_date")
+        date_range_type = self._validate_required_text(date_range_type, "date_range_type")
+
         root = ET.Element("request")
         sr_list = ET.SubElement(root, "serviceRequestList")
 
@@ -156,23 +161,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
         requests = []
 
         for sr in xml_response.findall(".//serviceRequest"):
-            requests.append(
-                {
-                    "id": sr.findtext("id"),
-                    "subject": sr.findtext("subject"),
-                    "status": sr.findtext("serviceRequestStatus"),
-                    "statusName": sr.findtext("serviceRequestStatusName"),
-                    "customerId": sr.findtext("customerId"),
-                    "externalId": sr.findtext("externalId"),
-                    "address": sr.findtext("locationAddress"),
-                    "city": sr.findtext("locationCity"),
-                    "state": sr.findtext("locationState"),
-                    "zip": sr.findtext("locationZip"),
-                    "start": sr.findtext("dateTimeStart"),
-                    "end": sr.findtext("dateTimeEnd"),
-                    "userIds": [u.text for u in sr.findall(".//assignedTo/userId")],
-                }
-            )
+            requests.append(self._parse_service_request(sr))
         return requests
 
     # -------------------------------------------------------------------------
@@ -205,6 +194,10 @@ class BlueFolderServiceRequests(BlueFolderBase):
                 - address, city, state, zip
                 - start, end
         """
+        start_date = self._validate_required_text(start_date, "start_date")
+        end_date = self._validate_required_text(end_date, "end_date")
+        date_field = self._validate_required_text(date_field, "date_field")
+
         root = ET.Element("request")
         sr_list = ET.SubElement(root, "serviceRequestList")
 
@@ -219,23 +212,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
         requests = []
 
         for sr in xml_response.findall(".//serviceRequest"):
-            requests.append(
-                {
-                    "id": sr.findtext("id"),
-                    "subject": sr.findtext("subject"),
-                    "status": sr.findtext("serviceRequestStatus"),
-                    "statusName": sr.findtext("serviceRequestStatusName"),
-                    "customerId": sr.findtext("customerId"),
-                    "externalId": sr.findtext("externalId"),
-                    "address": sr.findtext("locationAddress"),
-                    "city": sr.findtext("locationCity"),
-                    "state": sr.findtext("locationState"),
-                    "zip": sr.findtext("locationZip"),
-                    "start": sr.findtext("dateTimeStart"),
-                    "end": sr.findtext("dateTimeEnd"),
-                    "userIds": [u.text for u in sr.findall(".//assignedTo/userId")],
-                }
-            )
+            requests.append(self._parse_service_request(sr))
         return requests
 
     # -------------------------------------------------------------------------
@@ -256,6 +233,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
         xml.etree.ElementTree.Element
             Parsed XML response for the requested service request.
         """
+        sr_id = self._validate_positive_id(sr_id, "sr_id")
         root = ET.Element("request")
         sr_get = ET.SubElement(root, "serviceRequestGet")
         ET.SubElement(sr_get, "serviceRequestId").text = str(sr_id)
@@ -265,6 +243,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
 
     def get_history(self, service_request_id: int):
         """Retrieve the history for a Service Request."""
+        service_request_id = self._validate_positive_id(service_request_id, "service_request_id")
         root = ET.Element("request")
         sr_hist = ET.SubElement(root, "serviceRequestHistory")
         ET.SubElement(sr_hist, "serviceRequestId").text = str(service_request_id)
@@ -284,6 +263,10 @@ class BlueFolderServiceRequests(BlueFolderBase):
         assignment_comment: str | None = None,
     ):
         """Add an assignment to a Service Request."""
+        service_request_id = self._validate_positive_id(service_request_id, "service_request_id")
+        assignee_user_ids = [self._validate_positive_id(uid, "assignee_user_id") for uid in assignee_user_ids]
+        if not assignee_user_ids:
+            raise ValueError("at least one assignee_user_id is required")
         root = ET.Element("request")
         sr_add = ET.SubElement(root, "serviceRequestAssignmentAdd")
         ET.SubElement(sr_add, "serviceRequestId").text = str(service_request_id)
@@ -306,6 +289,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
         Edit an existing assignment. Supports startDate, endDate,
         allDayEvent, assignmentComment, assigneeUserIds (list[int]).
         """
+        assignment_id = self._validate_positive_id(assignment_id, "assignment_id")
         root = ET.Element("request")
         sr_edit = ET.SubElement(root, "serviceRequestAssignmentEdit")
         ET.SubElement(sr_edit, "assignmentId").text = str(assignment_id)
@@ -324,12 +308,13 @@ class BlueFolderServiceRequests(BlueFolderBase):
         if "assigneeUserIds" in fields:
             assignees = ET.SubElement(sr_edit, "assignedTo")
             for uid in fields["assigneeUserIds"]:
-                ET.SubElement(assignees, "userId").text = str(uid)
+                ET.SubElement(assignees, "userId").text = str(self._validate_positive_id(uid, "assignee_user_id"))
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         return self._post("editAssignment", xml_data=xml_data)
 
     def delete_assignment(self, assignment_id: int):
         """Delete an assignment from a Service Request."""
+        assignment_id = self._validate_positive_id(assignment_id, "assignment_id")
         root = ET.Element("request")
         sr_del = ET.SubElement(root, "serviceRequestDeleteAssignment")
         ET.SubElement(sr_del, "assignmentId").text = str(assignment_id)
@@ -338,6 +323,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
 
     def complete_assignment(self, assignment_id: int, comment: str | None = None):
         """Mark an assignment complete."""
+        assignment_id = self._validate_positive_id(assignment_id, "assignment_id")
         root = ET.Element("request")
         sr_comp = ET.SubElement(root, "serviceRequestAssignmentComplete")
         ET.SubElement(sr_comp, "assignmentId").text = str(assignment_id)
@@ -357,6 +343,9 @@ class BlueFolderServiceRequests(BlueFolderBase):
         user_id: int | None = None,
     ):
         """Add a comment to a Service Request."""
+        service_request_id = self._validate_positive_id(service_request_id, "service_request_id")
+        if not str(text or "").strip():
+            raise ValueError("comment text is required")
         root = ET.Element("request")
         sr_comment = ET.SubElement(root, "serviceRequestAddComment")
         ET.SubElement(sr_comment, "serviceRequestId").text = str(service_request_id)
@@ -378,6 +367,8 @@ class BlueFolderServiceRequests(BlueFolderBase):
         Optional fields: dateWorked, startTime, comment, itemId, itemDescription,
         billable, commentIsPublic, etc.
         """
+        service_request_id = self._validate_positive_id(service_request_id, "service_request_id")
+        user_id = self._validate_positive_id(user_id, "user_id")
         root = ET.Element("request")
         sr_labor = ET.SubElement(root, "serviceRequestAddLabor")
         ET.SubElement(sr_labor, "serviceRequestId").text = str(service_request_id)
@@ -390,6 +381,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
 
     def edit_labor(self, labor_id: int, **fields):
         """Edit an existing labor item on a Service Request."""
+        labor_id = self._validate_positive_id(labor_id, "labor_id")
         root = ET.Element("request")
         sr_labor = ET.SubElement(root, "serviceRequestEditLabor")
         ET.SubElement(sr_labor, "laborId").text = str(labor_id)
@@ -402,6 +394,8 @@ class BlueFolderServiceRequests(BlueFolderBase):
         self, service_request_id: int, item_id: int, item_quantity: int, **fields
     ):
         """Add a materials line to a Service Request."""
+        service_request_id = self._validate_positive_id(service_request_id, "service_request_id")
+        item_id = self._validate_positive_id(item_id, "item_id")
         root = ET.Element("request")
         sr_mat = ET.SubElement(root, "serviceRequestAddMaterial")
         ET.SubElement(sr_mat, "serviceRequestId").text = str(service_request_id)
@@ -414,6 +408,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
 
     def edit_material(self, material_id: int, **fields):
         """Edit a materials line on a Service Request."""
+        material_id = self._validate_positive_id(material_id, "material_id")
         root = ET.Element("request")
         sr_mat = ET.SubElement(root, "serviceRequestEditMaterial")
         ET.SubElement(sr_mat, "materialId").text = str(material_id)
@@ -451,3 +446,44 @@ class BlueFolderServiceRequests(BlueFolderBase):
             if val is None:
                 continue
             ET.SubElement(node, key).text = str(val)
+
+    @staticmethod
+    def _validate_positive_id(value: int, field_name: str) -> int:
+        try:
+            normalized = int(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{field_name} must be a positive integer") from exc
+        if normalized <= 0:
+            raise ValueError(f"{field_name} must be a positive integer")
+        return normalized
+
+    @staticmethod
+    def _validate_required_text(value: str, field_name: str) -> str:
+        normalized = str(value or "").strip()
+        if not normalized:
+            raise ValueError(f"{field_name} is required")
+        return normalized
+
+    @classmethod
+    def _parse_service_request(cls, sr: ET.Element) -> dict:
+        address = sr.findtext("locationAddress")
+        city = sr.findtext("locationCity")
+        state = sr.findtext("locationState")
+        zip_code = sr.findtext("locationZip")
+        locality = " ".join(part for part in [city, state, zip_code] if part).strip()
+        return {
+            "id": sr.findtext("id"),
+            "subject": sr.findtext("subject"),
+            "status": sr.findtext("serviceRequestStatus"),
+            "statusName": sr.findtext("serviceRequestStatusName"),
+            "customerId": sr.findtext("customerId"),
+            "externalId": sr.findtext("externalId"),
+            "address": address,
+            "city": city,
+            "state": state,
+            "zip": zip_code,
+            "formattedAddress": ", ".join(part for part in [address, locality] if part),
+            "start": sr.findtext("dateTimeStart"),
+            "end": sr.findtext("dateTimeEnd"),
+            "userIds": [u.text for u in sr.findall(".//assignedTo/userId") if u.text],
+        }

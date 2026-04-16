@@ -98,8 +98,13 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
               <serviceRequestStatus>Need Parts/Schedule</serviceRequestStatus>
               <serviceRequestStatusName>Need Parts/Schedule</serviceRequestStatusName>
               <customerId>456</customerId>
+              <locationAddress>180 E Hebron Rd</locationAddress>
+              <locationCity>Hebron</locationCity>
+              <locationState>ME</locationState>
+              <locationZip>04238</locationZip>
               <assignedTo>
                 <userId>9001</userId>
+                <userId />
                 <userId>9002</userId>
               </assignedTo>
             </serviceRequest>
@@ -119,12 +124,34 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
             "statusName": "Need Parts/Schedule",
             "customerId": "456",
             "externalId": None,
-            "address": None,
-            "city": None,
-            "state": None,
-            "zip": None,
+            "address": "180 E Hebron Rd",
+            "city": "Hebron",
+            "state": "ME",
+            "zip": "04238",
+            "formattedAddress": "180 E Hebron Rd, Hebron ME 04238",
             "start": None,
             "end": None,
             "userIds": ["9001", "9002"],
         }
     ]
+
+
+def test_service_request_helpers_validate_required_ids(sr):
+    invalid_calls = (
+        lambda: sr.get_by_id(0),
+        lambda: sr.get_history(""),
+        lambda: sr.add_assignment(100, []),
+        lambda: sr.add_assignment(0, [1]),
+        lambda: sr.edit_assignment(0),
+        lambda: sr.delete_assignment(None),
+        lambda: sr.complete_assignment(-1),
+        lambda: sr.add_comment(10, " "),
+        lambda: sr.add_labor(10, 0, "1.0"),
+        lambda: sr.edit_labor(""),
+        lambda: sr.add_material(10, 0, 1),
+        lambda: sr.edit_material(0),
+    )
+
+    for call in invalid_calls:
+        with pytest.raises(ValueError):
+            call()
