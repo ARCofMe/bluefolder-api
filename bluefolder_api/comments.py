@@ -33,6 +33,7 @@ class BlueFolderComments(BlueFolderBase):
         list[dict]
             List of comment records (author, date, text, visibility).
         """
+        service_request_id = self._validate_positive_id(service_request_id, "service_request_id")
         root = ET.Element("request")
         comment_list = ET.SubElement(root, "commentList")
         ET.SubElement(comment_list, "serviceRequestId").text = str(service_request_id)
@@ -47,7 +48,7 @@ class BlueFolderComments(BlueFolderBase):
                     "author": c.findtext("userName"),
                     "dateCreated": c.findtext("dateCreated"),
                     "text": c.findtext("commentText"),
-                    "isVisibleToCustomer": c.findtext("isVisibleToCustomer") == "1",
+                    "isVisibleToCustomer": self._parse_bool(c.findtext("isVisibleToCustomer")),
                 }
             )
         return comments
@@ -73,6 +74,11 @@ class BlueFolderComments(BlueFolderBase):
         xml.etree.ElementTree.Element
             Raw XML response from BlueFolder.
         """
+        service_request_id = self._validate_positive_id(service_request_id, "service_request_id")
+        text = str(text or "").strip()
+        if not text:
+            raise ValueError("comment text is required")
+
         root = ET.Element("request")
         comment_add = ET.SubElement(root, "commentAdd")
         ET.SubElement(comment_add, "serviceRequestId").text = str(service_request_id)
@@ -83,3 +89,17 @@ class BlueFolderComments(BlueFolderBase):
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
         return self._post("add", xml_data=xml_data)
+
+    @staticmethod
+    def _validate_positive_id(value: int, field_name: str) -> int:
+        try:
+            normalized = int(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{field_name} must be a positive integer") from exc
+        if normalized <= 0:
+            raise ValueError(f"{field_name} must be a positive integer")
+        return normalized
+
+    @staticmethod
+    def _parse_bool(value: str | None) -> bool:
+        return str(value or "").strip().lower() in {"1", "true", "yes", "y"}
