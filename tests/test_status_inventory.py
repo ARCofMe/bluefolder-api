@@ -1,7 +1,9 @@
 from bluefolder_api.status_inventory import (
     categorize_sr_status,
     categorize_sr_statuses,
+    load_status_inventory,
     parse_sr_status_dropdown_html,
+    tenant_service_request_statuses,
     update_inventory_from_dropdown_html,
 )
 
@@ -47,7 +49,45 @@ def test_categorize_sr_statuses_groups_ops_hub_workflows():
     assert categorize_sr_status("Scheduled") == "dispatch"
     assert categorize_sr_status("Completed") == "closed"
     assert categorize_sr_status("") == "unknown"
-    assert categorize_sr_statuses(["Need Parts/Schedule", "Waiting on Billing"]) == {
+    assert categorize_sr_statuses(["Need Parts/Schedule", "Need Parts/Schedule", "Waiting on Billing"]) == {
         "parts": ["Need Parts/Schedule"],
         "billing": ["Waiting on Billing"],
     }
+
+
+def test_tenant_service_request_statuses_reads_observed_and_live_inventory():
+    inventory = {
+        "service_request": {
+            "observed_status_values": [{"value": "New"}, {"value": "Completed"}],
+        },
+        "live_tenant_extract": {
+            "service_request": {
+                "distinct_statuses": [
+                    {"value": "Need Parts/Schedule", "count": 4},
+                    {"value": "completed", "count": 1},
+                ]
+            }
+        },
+    }
+
+    assert tenant_service_request_statuses(inventory) == ["New", "Completed", "Need Parts/Schedule"]
+
+
+def test_load_status_inventory_rejects_missing_or_invalid_files(tmp_path):
+    missing_path = tmp_path / "missing.json"
+    invalid_path = tmp_path / "invalid.json"
+    invalid_path.write_text("[]")
+
+    try:
+        load_status_inventory(missing_path)
+    except ValueError as exc:
+        assert "does not exist" in str(exc)
+    else:
+        raise AssertionError("missing inventory should fail")
+
+    try:
+        load_status_inventory(invalid_path)
+    except ValueError as exc:
+        assert "JSON object" in str(exc)
+    else:
+        raise AssertionError("non-object inventory should fail")
