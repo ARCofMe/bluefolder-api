@@ -104,6 +104,27 @@ def tenant_service_request_statuses(inventory: dict[str, Any]) -> list[str]:
     return deduped
 
 
+def service_request_status_summary(inventory: dict[str, Any]) -> dict[str, Any]:
+    """Return status counts grouped by Ops Hub workflow category."""
+    statuses = tenant_service_request_statuses(inventory)
+    categories = categorize_sr_statuses(statuses)
+    return {
+        "known_count": len(statuses),
+        "statuses": statuses,
+        "category_counts": {category: len(values) for category, values in categories.items()},
+        "categories": categories,
+        "has_live_extract": _has_live_service_request_extract(inventory),
+    }
+
+
+def _has_live_service_request_extract(inventory: dict[str, Any]) -> bool:
+    live_extract = inventory.get("live_tenant_extract")
+    if not isinstance(live_extract, dict):
+        return False
+    service_request = live_extract.get("service_request")
+    return isinstance(service_request, dict) and bool(service_request.get("distinct_statuses"))
+
+
 def _status_values(raw_values: Any) -> list[str]:
     if not isinstance(raw_values, list):
         return []

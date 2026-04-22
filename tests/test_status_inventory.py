@@ -3,6 +3,7 @@ from bluefolder_api.status_inventory import (
     categorize_sr_statuses,
     load_status_inventory,
     parse_sr_status_dropdown_html,
+    service_request_status_summary,
     tenant_service_request_statuses,
     update_inventory_from_dropdown_html,
 )
@@ -71,6 +72,12 @@ def test_tenant_service_request_statuses_reads_observed_and_live_inventory():
     }
 
     assert tenant_service_request_statuses(inventory) == ["New", "Completed", "Need Parts/Schedule"]
+
+    summary = service_request_status_summary(inventory)
+
+    assert summary["known_count"] == 3
+    assert summary["category_counts"] == {"other": 1, "closed": 1, "parts": 1}
+    assert summary["has_live_extract"] is True
 
 
 def test_load_status_inventory_rejects_missing_or_invalid_files(tmp_path):

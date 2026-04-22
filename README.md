@@ -87,7 +87,7 @@ The resulting `bluefolder_status_inventory.json` file is intentionally treated a
 
 Status inventory updates also write coarse Ops Hub categories for the tenant's SR statuses. These buckets are meant for routing surfaces like PartsDesk, RouteDesk, FieldDesk, billing follow-up, closed/archive, and catch-all review queues. They are heuristic labels; the raw BlueFolder status string remains the source of truth.
 
-Code that needs the tenant catalog can use `load_status_inventory(path)` and `tenant_service_request_statuses(inventory)`. The extractor prefers UI dropdown values when present, then falls back to observed and live-extracted statuses, with case-insensitive dedupe.
+Code that needs the tenant catalog can use `load_status_inventory(path)`, `tenant_service_request_statuses(inventory)`, and `service_request_status_summary(inventory)`. The extractor prefers UI dropdown values when present, then falls back to observed and live-extracted statuses, with case-insensitive dedupe.
 
 Service request listing remains bounded. Use `service_requests.list_for_status_range(status=..., start_date=..., end_date=...)` to scan one status inside one date window, or `list_for_range(..., status="open")` for all non-closed SRs inside a bounded window. Do not use these helpers for full-history loads.
 
