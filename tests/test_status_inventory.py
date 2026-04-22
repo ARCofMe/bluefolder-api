@@ -1,4 +1,6 @@
 from bluefolder_api.status_inventory import (
+    categorize_sr_status,
+    categorize_sr_statuses,
     parse_sr_status_dropdown_html,
     update_inventory_from_dropdown_html,
 )
@@ -37,3 +39,15 @@ def test_update_inventory_from_dropdown_html_updates_json(tmp_path):
 
     assert values == ["New", "Scheduled"]
     assert '"tenant_ui_status_options": [\n      "New",\n      "Scheduled"\n    ]' in inventory_path.read_text()
+    assert '"dispatch": [\n        "Scheduled"\n      ]' in inventory_path.read_text()
+
+
+def test_categorize_sr_statuses_groups_ops_hub_workflows():
+    assert categorize_sr_status("Need Parts/Schedule") == "parts"
+    assert categorize_sr_status("Scheduled") == "dispatch"
+    assert categorize_sr_status("Completed") == "closed"
+    assert categorize_sr_status("") == "unknown"
+    assert categorize_sr_statuses(["Need Parts/Schedule", "Waiting on Billing"]) == {
+        "parts": ["Need Parts/Schedule"],
+        "billing": ["Waiting on Billing"],
+    }

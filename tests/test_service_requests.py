@@ -97,11 +97,21 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
               <subject>Test SR</subject>
               <serviceRequestStatus>Need Parts/Schedule</serviceRequestStatus>
               <serviceRequestStatusName>Need Parts/Schedule</serviceRequestStatusName>
+              <statusLastUpdated>2026.04.01 08:00 AM</statusLastUpdated>
+              <statusAge_hours>12</statusAge_hours>
               <customerId>456</customerId>
               <locationAddress>180 E Hebron Rd</locationAddress>
               <locationCity>Hebron</locationCity>
               <locationState>ME</locationState>
               <locationZip>04238</locationZip>
+              <equipmentToService>
+                <equipment>
+                  <equipmentId>eq-1</equipmentId>
+                  <brand>Whirlpool</brand>
+                  <modelNumber>WRS325SDHZ</modelNumber>
+                  <type>Refrigerator</type>
+                </equipment>
+              </equipmentToService>
               <assignedTo>
                 <userId>9001</userId>
                 <userId />
@@ -122,6 +132,8 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
             "subject": "Test SR",
             "status": "Need Parts/Schedule",
             "statusName": "Need Parts/Schedule",
+            "statusLastUpdated": "2026.04.01 08:00 AM",
+            "statusAgeHours": "12",
             "customerId": "456",
             "externalId": None,
             "address": "180 E Hebron Rd",
@@ -132,13 +144,58 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
             "start": None,
             "end": None,
             "userIds": ["9001", "9002"],
+            "equipment": [
+                {
+                    "id": "eq-1",
+                    "name": None,
+                    "type": "Refrigerator",
+                    "category": None,
+                    "manufacturer": None,
+                    "brand": "Whirlpool",
+                    "model": None,
+                    "modelNumber": "WRS325SDHZ",
+                    "serialNumber": None,
+                }
+            ],
+            "modelNumber": "WRS325SDHZ",
+            "brand": "Whirlpool",
+            "applianceType": "Refrigerator",
         }
     ]
+
+
+def test_list_for_status_range_builds_bounded_status_filter(sr, monkeypatch):
+    response = ET.fromstring("<response status='ok'><serviceRequests /></response>")
+    calls = []
+
+    def fake_post(action, xml_data=None):
+        calls.append(xml_data)
+        return response
+
+    monkeypatch.setattr(sr, "_post", fake_post)
+
+    sr.list_for_status_range(
+        status="Need Parts/Schedule",
+        start_date="2026.04.01 12:00 AM",
+        end_date="2026.04.01 11:59 PM",
+        date_field="dateTimeClosed",
+    )
+
+    xml = ET.fromstring(calls[-1])
+    assert xml.find(".//serviceRequestList/status").text == "Need Parts/Schedule"
+    date_range = xml.find(".//serviceRequestList/dateRange")
+    assert date_range.attrib["dateField"] == "dateTimeClosed"
+
+
+def test_list_for_range_rejects_unknown_date_field(sr):
+    with pytest.raises(ValueError, match="date_field must be one of"):
+        sr.list_for_range("2026.04.01 12:00 AM", "2026.04.01 11:59 PM", date_field="allTime")
 
 
 def test_service_request_helpers_validate_required_ids(sr):
     invalid_calls = (
         lambda: sr.get_by_id(0),
+        lambda: sr.get_by_id(True),
         lambda: sr.get_history(""),
         lambda: sr.add_assignment(100, []),
         lambda: sr.add_assignment(0, [1]),

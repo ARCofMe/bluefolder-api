@@ -7,6 +7,15 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 
+STATUS_CATEGORY_KEYWORDS = {
+    "parts": ("part", "material", "order", "backorder", "supplier", "vendor"),
+    "dispatch": ("schedule", "scheduled", "dispatch", "assign", "route", "reschedule"),
+    "field": ("onsite", "on site", "in progress", "diagnos", "return", "callback"),
+    "billing": ("invoice", "billing", "billed", "payment", "paid", "collect"),
+    "closed": ("closed", "complete", "completed", "cancel", "done"),
+}
+
+
 class _SelectOptionParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
@@ -53,6 +62,28 @@ def parse_sr_status_dropdown_html(html: str) -> list[str]:
     return values
 
 
+def categorize_sr_status(status: str) -> str:
+    """Return the Ops Hub workflow category most likely owned by a status."""
+    normalized = str(status or "").strip().casefold()
+    if not normalized:
+        return "unknown"
+    for category, keywords in STATUS_CATEGORY_KEYWORDS.items():
+        if any(keyword in normalized for keyword in keywords):
+            return category
+    if normalized == "open":
+        return "dispatch"
+    return "other"
+
+
+def categorize_sr_statuses(statuses: list[str]) -> dict[str, list[str]]:
+    """Group tenant SR statuses into coarse Ops Hub workflow categories."""
+    grouped: dict[str, list[str]] = {}
+    for status in statuses:
+        category = categorize_sr_status(status)
+        grouped.setdefault(category, []).append(status)
+    return grouped
+
+
 def update_inventory_from_dropdown_html(
     *,
     html: str,
@@ -67,6 +98,7 @@ def update_inventory_from_dropdown_html(
     values = parse_sr_status_dropdown_html(html)
     service_request = inventory.setdefault("service_request", {})
     service_request["tenant_ui_status_options"] = values
+    service_request["ops_hub_categories"] = categorize_sr_statuses(values)
 
     sources = inventory.setdefault("sources", {})
     docs = sources.setdefault("docs", [])

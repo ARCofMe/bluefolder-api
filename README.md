@@ -85,6 +85,10 @@ pbpaste | PYTHONPATH=. python scripts/update_status_inventory_from_html.py
 
 The resulting `bluefolder_status_inventory.json` file is intentionally treated as a local tenant artifact, not library-owned source. The repo ships [`bluefolder_status_inventory.example.json`](./bluefolder_status_inventory.example.json) only as a schema hint.
 
+Status inventory updates also write coarse Ops Hub categories for the tenant's SR statuses. These buckets are meant for routing surfaces like PartsDesk, RouteDesk, FieldDesk, billing follow-up, closed/archive, and catch-all review queues. They are heuristic labels; the raw BlueFolder status string remains the source of truth.
+
+Service request listing remains bounded. Use `service_requests.list_for_status_range(status=..., start_date=..., end_date=...)` to scan one status inside one date window, or `list_for_range(..., status="open")` for all non-closed SRs inside a bounded window. Do not use these helpers for full-history loads.
+
 To export the tenant's available user roles plus assigned roles per user, use:
 
 ```bash

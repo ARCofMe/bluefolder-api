@@ -4,6 +4,16 @@ import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
 
 
+SUPPORTED_DATE_FIELDS = frozenset(
+    {
+        "dateTimeCreated",
+        "dateTimeClosed",
+        "dateTimeScheduled",
+        "statusLastUpdated",
+    }
+)
+
+
 class BlueFolderServiceRequests(BlueFolderBase):
     """
     BlueFolder Service Requests API interface.
@@ -140,7 +150,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
         user_id = self._validate_positive_id(user_id, "user_id")
         start_date = self._validate_required_text(start_date, "start_date")
         end_date = self._validate_required_text(end_date, "end_date")
-        date_range_type = self._validate_required_text(date_range_type, "date_range_type")
+        date_range_type = self._validate_date_field(date_range_type, "date_range_type")
 
         root = ET.Element("request")
         sr_list = ET.SubElement(root, "serviceRequestList")
@@ -170,6 +180,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
         start_date: str,
         end_date: str,
         date_field: str = "dateTimeCreated",
+        status: str | None = None,
     ):
         """
         Retrieve all Service Requests within a given date range (no user filter).
@@ -185,6 +196,9 @@ class BlueFolderServiceRequests(BlueFolderBase):
             End date/time of the query range (e.g. "2025.11.07 11:59 PM").
         date_field : str, optional
             The date field to filter by. Default is "dateTimeCreated".
+        status : str, optional
+            BlueFolder service request status to filter by. Use "open" for all
+            non-closed service requests, or a tenant-specific status value.
 
         Returns
         -------
@@ -196,7 +210,8 @@ class BlueFolderServiceRequests(BlueFolderBase):
         """
         start_date = self._validate_required_text(start_date, "start_date")
         end_date = self._validate_required_text(end_date, "end_date")
-        date_field = self._validate_required_text(date_field, "date_field")
+        date_field = self._validate_date_field(date_field, "date_field")
+        status = self._validate_optional_text(status, "status")
 
         root = ET.Element("request")
         sr_list = ET.SubElement(root, "serviceRequestList")
@@ -205,6 +220,8 @@ class BlueFolderServiceRequests(BlueFolderBase):
         # Cast to str to avoid xml serialization errors if callers pass non-string values
         ET.SubElement(date_range, "dateRangeStart").text = str(start_date)
         ET.SubElement(date_range, "dateRangeEnd").text = str(end_date)
+        if status:
+            ET.SubElement(sr_list, "status").text = status
 
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
@@ -214,6 +231,28 @@ class BlueFolderServiceRequests(BlueFolderBase):
         for sr in xml_response.findall(".//serviceRequest"):
             requests.append(self._parse_service_request(sr))
         return requests
+
+    def list_for_status_range(
+        self,
+        *,
+        status: str,
+        start_date: str,
+        end_date: str,
+        date_field: str = "dateTimeCreated",
+    ):
+        """
+        Retrieve Service Requests for one bounded date window and one status.
+
+        This is intentionally a bounded helper. Callers that need multiple
+        statuses should iterate known statuses and commit each window
+        independently instead of requesting full history at once.
+        """
+        return self.list_for_range(
+            start_date=start_date,
+            end_date=end_date,
+            date_field=date_field,
+            status=status,
+        )
 
     # -------------------------------------------------------------------------
     def get_by_id(self, sr_id: int):
@@ -449,6 +488,8 @@ class BlueFolderServiceRequests(BlueFolderBase):
 
     @staticmethod
     def _validate_positive_id(value: int, field_name: str) -> int:
+        if isinstance(value, bool):
+            raise ValueError(f"{field_name} must be a positive integer")
         try:
             normalized = int(value)
         except (TypeError, ValueError) as exc:
@@ -464,18 +505,40 @@ class BlueFolderServiceRequests(BlueFolderBase):
             raise ValueError(f"{field_name} is required")
         return normalized
 
+    @staticmethod
+    def _validate_optional_text(value: str | None, field_name: str) -> str | None:
+        if value is None:
+            return None
+        normalized = str(value).strip()
+        if not normalized:
+            raise ValueError(f"{field_name} cannot be blank")
+        return normalized
+
+    @classmethod
+    def _validate_date_field(cls, value: str, field_name: str) -> str:
+        normalized = cls._validate_required_text(value, field_name)
+        if normalized not in SUPPORTED_DATE_FIELDS:
+            supported = ", ".join(sorted(SUPPORTED_DATE_FIELDS))
+            raise ValueError(f"{field_name} must be one of: {supported}")
+        return normalized
+
     @classmethod
     def _parse_service_request(cls, sr: ET.Element) -> dict:
         address = sr.findtext("locationAddress")
         city = sr.findtext("locationCity")
         state = sr.findtext("locationState")
         zip_code = sr.findtext("locationZip")
+        equipment = [cls._parse_equipment_item(item) for item in sr.findall(".//equipmentToService/equipment")]
+        if not equipment:
+            equipment = [cls._parse_equipment_item(item) for item in sr.findall(".//equipmentItem")]
         locality = " ".join(part for part in [city, state, zip_code] if part).strip()
         return {
             "id": sr.findtext("id"),
             "subject": sr.findtext("subject"),
             "status": sr.findtext("serviceRequestStatus"),
             "statusName": sr.findtext("serviceRequestStatusName"),
+            "statusLastUpdated": sr.findtext("statusLastUpdated"),
+            "statusAgeHours": sr.findtext("statusAge_hours"),
             "customerId": sr.findtext("customerId"),
             "externalId": sr.findtext("externalId"),
             "address": address,
@@ -486,4 +549,31 @@ class BlueFolderServiceRequests(BlueFolderBase):
             "start": sr.findtext("dateTimeStart"),
             "end": sr.findtext("dateTimeEnd"),
             "userIds": [u.text for u in sr.findall(".//assignedTo/userId") if u.text],
+            "equipment": equipment,
+            "modelNumber": cls._first_equipment_value(equipment, "modelNumber", "model"),
+            "brand": cls._first_equipment_value(equipment, "brand", "manufacturer"),
+            "applianceType": cls._first_equipment_value(equipment, "applianceType", "type", "category"),
         }
+
+    @staticmethod
+    def _parse_equipment_item(item: ET.Element) -> dict:
+        return {
+            "id": item.findtext("id") or item.findtext("equipmentId"),
+            "name": item.findtext("name"),
+            "type": item.findtext("type"),
+            "category": item.findtext("category"),
+            "manufacturer": item.findtext("manufacturer"),
+            "brand": item.findtext("brand"),
+            "model": item.findtext("model"),
+            "modelNumber": item.findtext("modelNumber"),
+            "serialNumber": item.findtext("serialNumber"),
+        }
+
+    @staticmethod
+    def _first_equipment_value(equipment: list[dict], *keys: str) -> str | None:
+        for item in equipment:
+            for key in keys:
+                value = item.get(key)
+                if value:
+                    return str(value)
+        return None

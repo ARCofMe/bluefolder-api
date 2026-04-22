@@ -1,6 +1,14 @@
 {
   "service_request": {
-    "tenant_ui_status_options": []
+    "tenant_ui_status_options": [],
+    "ops_hub_categories": {
+      "parts": [],
+      "dispatch": [],
+      "field": [],
+      "billing": [],
+      "closed": [],
+      "other": []
+    }
   },
   "assignment": {
     "normalized_states": []
