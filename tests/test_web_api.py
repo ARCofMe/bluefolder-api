@@ -14,6 +14,21 @@ class FakeAssignments:
         }]
 
 
+class FakeServiceRequests:
+    def get_by_id(self, service_request_id):
+        import xml.etree.ElementTree as ET
+        return ET.fromstring("""<response><serviceRequest>
+          <id>102052</id><subject>Test repair</subject>
+          <serviceRequestStatus>Open</serviceRequestStatus>
+          <customerId>123</customerId>
+          <locationAddress>9 Example Rd</locationAddress>
+          <locationCity>Hebron</locationCity><locationState>ME</locationState>
+          <locationZip>04238</locationZip>
+        </serviceRequest></response>""")
+
+    _parse_service_request = staticmethod(__import__("bluefolder_api.service_requests", fromlist=["BlueFolderServiceRequests"]).BlueFolderServiceRequests._parse_service_request)
+
+
 class FakeUsers:
     def list_all(self):
         return [{"userId": "33538043", "displayName": "David Durost", "inactive": False}]
@@ -26,6 +41,7 @@ class FakeClient:
     def __init__(self):
         self.assignments = FakeAssignments()
         self.users = FakeUsers()
+        self.service_requests = FakeServiceRequests()
 
 
 def test_assignments_by_iso_date():
@@ -49,3 +65,12 @@ def test_users():
     response = client.get("/users")
     assert response.status_code == 200
     assert response.get_json()["users"][0]["userId"] == "33538043"
+
+
+def test_service_request_by_id():
+    client = create_app(FakeClient).test_client()
+    response = client.get("/service-requests/102052")
+    assert response.status_code == 200
+    body = response.get_json()["serviceRequest"]
+    assert body["id"] == "102052"
+    assert body["formattedAddress"] == "9 Example Rd, Hebron ME 04238"
