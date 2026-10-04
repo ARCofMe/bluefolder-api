@@ -274,8 +274,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
         """
         sr_id = self._validate_positive_id(sr_id, "sr_id")
         root = ET.Element("request")
-        sr_get = ET.SubElement(root, "serviceRequestGet")
-        ET.SubElement(sr_get, "serviceRequestId").text = str(sr_id)
+        ET.SubElement(root, "serviceRequestId").text = str(sr_id)
 
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
         return self._post("get", xml_data=xml_data)
@@ -524,22 +523,25 @@ class BlueFolderServiceRequests(BlueFolderBase):
 
     @classmethod
     def _parse_service_request(cls, sr: ET.Element) -> dict:
-        address = sr.findtext("locationAddress")
-        city = sr.findtext("locationCity")
-        state = sr.findtext("locationState")
-        zip_code = sr.findtext("locationZip")
-        equipment = [cls._parse_equipment_item(item) for item in sr.findall(".//equipmentToService/equipment")]
+        address = sr.findtext("customerLocationStreetAddress") or sr.findtext("locationAddress")
+        city = sr.findtext("customerLocationCity") or sr.findtext("locationCity")
+        state = sr.findtext("customerLocationState") or sr.findtext("locationState")
+        zip_code = sr.findtext("customerLocationPostalCode") or sr.findtext("locationZip")
+        equipment = [cls._parse_equipment_item(item) for item in sr.findall("./equipmentToService/equipmentItem")]
         if not equipment:
-            equipment = [cls._parse_equipment_item(item) for item in sr.findall(".//equipmentItem")]
+            equipment = [cls._parse_equipment_item(item) for item in sr.findall(".//equipmentToService/equipment")]
         locality = " ".join(part for part in [city, state, zip_code] if part).strip()
         return {
-            "id": sr.findtext("id"),
-            "subject": sr.findtext("subject"),
-            "status": sr.findtext("serviceRequestStatus"),
-            "statusName": sr.findtext("serviceRequestStatusName"),
+            "id": sr.findtext("serviceRequestId") or sr.findtext("id"),
+            "description": sr.findtext("description") or sr.findtext("subject"),
+            "detailedDescription": sr.findtext("detailedDescription"),
+            "status": sr.findtext("status") or sr.findtext("serviceRequestStatus"),
+            "statusName": sr.findtext("status") or sr.findtext("serviceRequestStatusName"),
             "statusLastUpdated": sr.findtext("statusLastUpdated"),
             "statusAgeHours": sr.findtext("statusAge_hours"),
             "customerId": sr.findtext("customerId"),
+            "customerName": sr.findtext("customerName"),
+            "customerLocationId": sr.findtext("customerLocationId"),
             "externalId": sr.findtext("externalId"),
             "address": address,
             "city": city,
@@ -558,15 +560,15 @@ class BlueFolderServiceRequests(BlueFolderBase):
     @staticmethod
     def _parse_equipment_item(item: ET.Element) -> dict:
         return {
-            "id": item.findtext("id") or item.findtext("equipmentId"),
-            "name": item.findtext("name"),
-            "type": item.findtext("type"),
+            "id": item.findtext("equipmentId") or item.findtext("id"),
+            "name": item.findtext("equipName") or item.findtext("name"),
+            "type": item.findtext("equipType") or item.findtext("type"),
             "category": item.findtext("category"),
-            "manufacturer": item.findtext("manufacturer"),
-            "brand": item.findtext("brand"),
-            "model": item.findtext("model"),
-            "modelNumber": item.findtext("modelNumber"),
-            "serialNumber": item.findtext("serialNumber"),
+            "manufacturer": item.findtext("mfrName") or item.findtext("manufacturer"),
+            "brand": item.findtext("mfrName") or item.findtext("brand"),
+            "model": item.findtext("modelNo") or item.findtext("model"),
+            "modelNumber": item.findtext("modelNo") or item.findtext("modelNumber"),
+            "serialNumber": item.findtext("serialNo") or item.findtext("serialNumber"),
         }
 
     @staticmethod
