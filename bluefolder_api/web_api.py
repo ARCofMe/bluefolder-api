@@ -56,6 +56,18 @@ def create_app(client_factory=BlueFolderClient):
         except (BlueFolderError, ValueError) as exc:
             return jsonify({"error": str(exc)}), 502
 
+    @app.get("/service-requests/<int:service_request_id>/materials")
+    def service_request_materials(service_request_id):
+        try:
+            client = client_factory()
+            rows = client.materials.list_for_service_request(service_request_id)
+            return jsonify({
+                "serviceRequestId": str(service_request_id),
+                "materials": rows,
+            })
+        except (BlueFolderError, ValueError) as exc:
+            return jsonify({"error": str(exc)}), 502
+
     @app.get("/assignments")
     def assignments():
         user_id = request.args.get("userId", type=int)
