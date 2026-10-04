@@ -68,9 +68,9 @@ def create_app(client_factory=BlueFolderClient):
                 return jsonify({"error": "service request not found"}), 404
 
             rows = []
-            material_nodes = sr.findall("./materials/material")
+            material_nodes = sr.findall("./materials/materialsItem")
             if not material_nodes:
-                material_nodes = sr.findall(".//materials/material")
+                material_nodes = sr.findall(".//materials/materialsItem")
 
             for material in material_nodes:
                 billable_text = (
@@ -82,10 +82,10 @@ def create_app(client_factory=BlueFolderClient):
                     "id": material.findtext("materialId") or material.findtext("id"),
                     "itemId": material.findtext("itemId"),
                     "itemName": material.findtext("itemName"),
-                    "description": material.findtext("description") or material.findtext("itemDescription"),
-                    "quantity": material.findtext("quantity") or material.findtext("itemQuantity"),
-                    "unitPrice": material.findtext("unitPrice"),
-                    "total": material.findtext("total"),
+                    "description": material.findtext("itemDescription") or material.findtext("description"),
+                    "quantity": material.findtext("itemQuantity") or material.findtext("quantity"),
+                    "unitPrice": material.findtext("itemUnitPrice") or material.findtext("unitPrice"),
+                    "total": material.findtext("totalPrice") or material.findtext("totalprice") or material.findtext("total"),
                     "isBillable": billable_text in {"1", "true", "yes", "y"},
                 })
 
