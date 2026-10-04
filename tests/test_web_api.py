@@ -33,6 +33,12 @@ class FakeServiceRequests:
             <equipType>Refrigerator</equipType><mfrName>Samsung</mfrName>
             <modelNo>RFTEST</modelNo><serialNo>12345</serialNo>
           </equipmentItem></equipmentToService>
+          <materials><material>
+            <materialId>MAT1</materialId><itemId>ITEM1</itemId>
+            <itemName>W11546690</itemName><description>Control Board</description>
+            <quantity>1</quantity><unitPrice>125.00</unitPrice>
+            <total>125.00</total><isBillable>0</isBillable>
+          </material></materials>
         </serviceRequest></response>""")
 
     _parse_service_request = staticmethod(__import__("bluefolder_api.service_requests", fromlist=["BlueFolderServiceRequests"]).BlueFolderServiceRequests._parse_service_request)
@@ -113,4 +119,5 @@ def test_service_request_materials():
     assert body["serviceRequestId"] == "102052"
     assert body["materials"][0]["id"] == "MAT1"
     assert body["materials"][0]["itemName"] == "W11546690"
+    assert body["materials"][0]["itemId"] == "ITEM1"
     assert body["materials"][0]["isBillable"] is False

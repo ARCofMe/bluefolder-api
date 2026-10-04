@@ -60,7 +60,35 @@ def create_app(client_factory=BlueFolderClient):
     def service_request_materials(service_request_id):
         try:
             client = client_factory()
-            rows = client.materials.list_for_service_request(service_request_id)
+            xml_response = client.service_requests.get_by_id(service_request_id)
+            sr = xml_response.find(".//serviceRequest")
+            if sr is None and xml_response.tag == "serviceRequest":
+                sr = xml_response
+            if sr is None:
+                return jsonify({"error": "service request not found"}), 404
+
+            rows = []
+            material_nodes = sr.findall("./materials/material")
+            if not material_nodes:
+                material_nodes = sr.findall(".//materials/material")
+
+            for material in material_nodes:
+                billable_text = (
+                    material.findtext("isBillable")
+                    or material.findtext("billable")
+                    or ""
+                ).strip().lower()
+                rows.append({
+                    "id": material.findtext("materialId") or material.findtext("id"),
+                    "itemId": material.findtext("itemId"),
+                    "itemName": material.findtext("itemName"),
+                    "description": material.findtext("description") or material.findtext("itemDescription"),
+                    "quantity": material.findtext("quantity") or material.findtext("itemQuantity"),
+                    "unitPrice": material.findtext("unitPrice"),
+                    "total": material.findtext("total"),
+                    "isBillable": billable_text in {"1", "true", "yes", "y"},
+                })
+
             return jsonify({
                 "serviceRequestId": str(service_request_id),
                 "materials": rows,
