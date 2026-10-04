@@ -18,12 +18,21 @@ class FakeServiceRequests:
     def get_by_id(self, service_request_id):
         import xml.etree.ElementTree as ET
         return ET.fromstring("""<response><serviceRequest>
-          <id>102052</id><subject>Test repair</subject>
-          <serviceRequestStatus>Open</serviceRequestStatus>
-          <customerId>123</customerId>
-          <locationAddress>9 Example Rd</locationAddress>
-          <locationCity>Hebron</locationCity><locationState>ME</locationState>
-          <locationZip>04238</locationZip>
+          <serviceRequestId>102052</serviceRequestId>
+          <description>Test repair</description>
+          <detailedDescription>Refrigerator not cooling</detailedDescription>
+          <status>Open</status>
+          <customerId>123</customerId><customerName>Test Customer</customerName>
+          <customerLocationId>456</customerLocationId>
+          <customerLocationStreetAddress>9 Example Rd</customerLocationStreetAddress>
+          <customerLocationCity>Hebron</customerLocationCity>
+          <customerLocationState>ME</customerLocationState>
+          <customerLocationPostalCode>04238</customerLocationPostalCode>
+          <equipmentToService><equipmentItem>
+            <equipmentId>abc</equipmentId><equipName>Kitchen Refrigerator</equipName>
+            <equipType>Refrigerator</equipType><mfrName>Samsung</mfrName>
+            <modelNo>RFTEST</modelNo><serialNo>12345</serialNo>
+          </equipmentItem></equipmentToService>
         </serviceRequest></response>""")
 
     _parse_service_request = staticmethod(__import__("bluefolder_api.service_requests", fromlist=["BlueFolderServiceRequests"]).BlueFolderServiceRequests._parse_service_request)
@@ -74,3 +83,9 @@ def test_service_request_by_id():
     body = response.get_json()["serviceRequest"]
     assert body["id"] == "102052"
     assert body["formattedAddress"] == "9 Example Rd, Hebron ME 04238"
+    assert body["customerName"] == "Test Customer"
+    assert body["description"] == "Test repair"
+    assert body["detailedDescription"] == "Refrigerator not cooling"
+    assert body["brand"] == "Samsung"
+    assert body["modelNumber"] == "RFTEST"
+    assert body["applianceType"] == "Refrigerator"
