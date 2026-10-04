@@ -1,7 +1,8 @@
 """Small JSON/HTTP facade for Power Platform and other integrations."""
 
 import os
-from datetime import date, datetime
+import xml.etree.ElementTree as ET
+from datetime import date
 
 from flask import Flask, jsonify, request
 
@@ -38,6 +39,20 @@ def create_app(client_factory=BlueFolderClient):
             client = client_factory()
             rows = client.users.list_active() if active_only else client.users.list_all()
             return jsonify({"users": rows})
+        except (BlueFolderError, ValueError) as exc:
+            return jsonify({"error": str(exc)}), 502
+
+    @app.get("/service-requests/<int:service_request_id>")
+    def service_request(service_request_id):
+        try:
+            client = client_factory()
+            xml_response = client.service_requests.get_by_id(service_request_id)
+            sr = xml_response.find(".//serviceRequest")
+            if sr is None and xml_response.tag == "serviceRequest":
+                sr = xml_response
+            if sr is None:
+                return jsonify({"error": "service request not found"}), 404
+            return jsonify({"serviceRequest": client.service_requests._parse_service_request(sr)})
         except (BlueFolderError, ValueError) as exc:
             return jsonify({"error": str(exc)}), 502
 
