@@ -38,6 +38,19 @@ class FakeServiceRequests:
     _parse_service_request = staticmethod(__import__("bluefolder_api.service_requests", fromlist=["BlueFolderServiceRequests"]).BlueFolderServiceRequests._parse_service_request)
 
 
+class FakeMaterials:
+    def list_for_service_request(self, service_request_id):
+        return [{
+            "id": "MAT1",
+            "itemName": "W11546690",
+            "description": "Control Board",
+            "quantity": "1",
+            "unitPrice": "125.00",
+            "total": "125.00",
+            "isBillable": False,
+        }]
+
+
 class FakeUsers:
     def list_all(self):
         return [{"userId": "33538043", "displayName": "David Durost", "inactive": False}]
@@ -51,6 +64,7 @@ class FakeClient:
         self.assignments = FakeAssignments()
         self.users = FakeUsers()
         self.service_requests = FakeServiceRequests()
+        self.materials = FakeMaterials()
 
 
 def test_assignments_by_iso_date():
@@ -89,3 +103,14 @@ def test_service_request_by_id():
     assert body["brand"] == "Samsung"
     assert body["modelNumber"] == "RFTEST"
     assert body["applianceType"] == "Refrigerator"
+
+
+def test_service_request_materials():
+    client = create_app(FakeClient).test_client()
+    response = client.get("/service-requests/102052/materials")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["serviceRequestId"] == "102052"
+    assert body["materials"][0]["id"] == "MAT1"
+    assert body["materials"][0]["itemName"] == "W11546690"
+    assert body["materials"][0]["isBillable"] is False
