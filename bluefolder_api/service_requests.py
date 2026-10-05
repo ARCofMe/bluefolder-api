@@ -536,19 +536,25 @@ class BlueFolderServiceRequests(BlueFolderBase):
         if not lines:
             return None
 
-        headings = ("problem description", "genai symptoms")
-        first = lines[0]
-        first_lower = first.lower()
+        first_paragraph = paragraphs[0]
+        first_paragraph_lower = first_paragraph.lower()
 
-        for heading in headings:
-            if first_lower == heading:
-                return lines[1] if len(lines) > 1 else None
-            prefix = heading + ":"
-            if first_lower.startswith(prefix):
-                value = first[len(prefix):].strip()
-                return value or (lines[1] if len(lines) > 1 else None)
+        # Samsung notes can put the useful symptom after a generated summary in
+        # the same paragraph, e.g. "... | GenAI Symptoms: No water and no ice".
+        symptoms_marker = "genai symptoms:"
+        marker_index = first_paragraph_lower.find(symptoms_marker)
+        if marker_index != -1:
+            value = first_paragraph[marker_index + len(symptoms_marker):].strip()
+            return value or None
 
-        return paragraphs[0]
+        problem_heading = "problem description"
+        if first_paragraph_lower == problem_heading:
+            return None
+        if first_paragraph_lower.startswith(problem_heading):
+            value = first_paragraph[len(problem_heading):].lstrip(":").strip()
+            return value or None
+
+        return first_paragraph
 
     @classmethod
     def _parse_service_request(cls, sr: ET.Element) -> dict:
