@@ -212,3 +212,40 @@ def test_service_request_helpers_validate_required_ids(sr):
     for call in invalid_calls:
         with pytest.raises(ValueError):
             call()
+
+
+@pytest.mark.parametrize(
+    ("detail", "expected"),
+    [
+        ("No power to unit\n\nCustomer reset breaker.", "No power to unit"),
+        ("Problem Description\r\nNO POWER\r\n\r\nWarranty boilerplate", "NO POWER"),
+        ("GenAI Symptoms\nIce maker not producing ice\n\nGenerated notes", "Ice maker not producing ice"),
+        ("GenAI Symptoms: Washer will not drain\n\nGenerated notes", "Washer will not drain"),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_extract_complaint(detail, expected):
+    assert BlueFolderServiceRequests._extract_complaint(detail) == expected
+
+
+def test_parse_service_request_exposes_fielddesk_equipment_projection():
+    xml = ET.fromstring("""
+    <serviceRequest>
+      <serviceRequestId>102052</serviceRequestId>
+      <detailedDescription>Problem Description\nNO POWER\n\nBoilerplate</detailedDescription>
+      <equipmentToService><equipmentItem>
+        <equipmentId>eq-1</equipmentId>
+        <equipName>Dryer</equipName>
+        <mfrName>GE</mfrName>
+        <modelNo>GTD48EAS0WWB</modelNo>
+        <serialNo>RA874021C</serialNo>
+      </equipmentItem></equipmentToService>
+    </serviceRequest>
+    """)
+    row = BlueFolderServiceRequests._parse_service_request(xml)
+    assert row["brand"] == "GE"
+    assert row["applianceType"] == "Dryer"
+    assert row["modelNumber"] == "GTD48EAS0WWB"
+    assert row["serialNumber"] == "RA874021C"
+    assert row["complaint"] == "NO POWER"
