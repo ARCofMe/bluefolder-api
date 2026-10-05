@@ -221,6 +221,16 @@ def test_service_request_helpers_validate_required_ids(sr):
         ("Problem Description\r\nNO POWER\r\n\r\nWarranty boilerplate", "NO POWER"),
         ("GenAI Symptoms\nIce maker not producing ice\n\nGenerated notes", "Ice maker not producing ice"),
         ("GenAI Symptoms: Washer will not drain\n\nGenerated notes", "Washer will not drain"),
+        (
+            " GenAI Summary: The customer called about their refrigerator not producing water and ice. "
+            "They had previously spoken to a technician who provided troubleshooting steps, but the issue persisted. "
+            "| GenAI Symptoms: No water and no ice coming out of the refrigerator\n\nService Fee: 129.00",
+            "No water and no ice coming out of the refrigerator",
+        ),
+        (
+            "Problem Description\nFirst complaint line\nSecond complaint line\n\nWarranty boilerplate",
+            "First complaint line\nSecond complaint line",
+        ),
         ("", None),
         (None, None),
     ],
