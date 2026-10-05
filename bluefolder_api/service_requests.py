@@ -521,6 +521,35 @@ class BlueFolderServiceRequests(BlueFolderBase):
             raise ValueError(f"{field_name} must be one of: {supported}")
         return normalized
 
+    @staticmethod
+    def _extract_complaint(detailed_description: str | None) -> str | None:
+        """Return the technician-facing complaint from BlueFolder detail text."""
+        if not detailed_description or not detailed_description.strip():
+            return None
+
+        text = detailed_description.replace("\r\n", "\n").replace("\r", "\n").strip()
+        paragraphs = [part.strip() for part in text.split("\n\n") if part.strip()]
+        if not paragraphs:
+            return None
+
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
+        if not lines:
+            return None
+
+        headings = ("problem description", "genai symptoms")
+        first = lines[0]
+        first_lower = first.lower()
+
+        for heading in headings:
+            if first_lower == heading:
+                return lines[1] if len(lines) > 1 else None
+            prefix = heading + ":"
+            if first_lower.startswith(prefix):
+                value = first[len(prefix):].strip()
+                return value or (lines[1] if len(lines) > 1 else None)
+
+        return paragraphs[0]
+
     @classmethod
     def _parse_service_request(cls, sr: ET.Element) -> dict:
         address = sr.findtext("customerLocationStreetAddress") or sr.findtext("locationAddress")
@@ -531,10 +560,12 @@ class BlueFolderServiceRequests(BlueFolderBase):
         if not equipment:
             equipment = [cls._parse_equipment_item(item) for item in sr.findall(".//equipmentToService/equipment")]
         locality = " ".join(part for part in [city, state, zip_code] if part).strip()
+        detailed_description = sr.findtext("detailedDescription")
         return {
             "id": sr.findtext("serviceRequestId") or sr.findtext("id"),
             "description": sr.findtext("description") or sr.findtext("subject"),
-            "detailedDescription": sr.findtext("detailedDescription"),
+            "detailedDescription": detailed_description,
+            "complaint": cls._extract_complaint(detailed_description),
             "status": sr.findtext("status") or sr.findtext("serviceRequestStatus"),
             "statusName": sr.findtext("status") or sr.findtext("serviceRequestStatusName"),
             "statusLastUpdated": sr.findtext("statusLastUpdated"),
@@ -553,8 +584,9 @@ class BlueFolderServiceRequests(BlueFolderBase):
             "userIds": [u.text for u in sr.findall(".//assignedTo/userId") if u.text],
             "equipment": equipment,
             "modelNumber": cls._first_equipment_value(equipment, "modelNumber", "model"),
+            "serialNumber": cls._first_equipment_value(equipment, "serialNumber"),
             "brand": cls._first_equipment_value(equipment, "brand", "manufacturer"),
-            "applianceType": cls._first_equipment_value(equipment, "applianceType", "type", "category"),
+            "applianceType": cls._first_equipment_value(equipment, "applianceType", "type", "category", "name"),
         }
 
     @staticmethod
