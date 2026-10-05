@@ -106,8 +106,10 @@ def test_service_request_by_id():
     assert body["customerName"] == "Test Customer"
     assert body["description"] == "Test repair"
     assert body["detailedDescription"] == "Refrigerator not cooling"
+    assert body["complaint"] == "Refrigerator not cooling"
     assert body["brand"] == "Samsung"
     assert body["modelNumber"] == "RFTEST"
+    assert body["serialNumber"] == "12345"
     assert body["applianceType"] == "Refrigerator"
 
 
