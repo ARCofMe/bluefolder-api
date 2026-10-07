@@ -107,6 +107,11 @@ def create_app(client_factory=BlueFolderClient):
                 material_nodes = sr.findall(".//materials/materialsItem")
 
             for material in material_nodes:
+                raw_comment = material.findtext("comment") or ""
+                normalized_comment = raw_comment.replace("\r\n", "\n").replace("\r", "\n")
+                comment_lines = normalized_comment.split("\n")
+                part_number = comment_lines[0].strip() if comment_lines else ""
+                part_description = "\n".join(comment_lines[1:]).strip()
                 billable_text = (
                     material.findtext("isBillable")
                     or material.findtext("billable")
@@ -116,6 +121,10 @@ def create_app(client_factory=BlueFolderClient):
                     "id": material.findtext("materialId") or material.findtext("id"),
                     "itemId": material.findtext("itemId"),
                     "itemName": material.findtext("itemName"),
+                    "comment": raw_comment,
+                    "partNumber": part_number or None,
+                    "partDescription": part_description or None,
+                    "billingStatus": material.findtext("billingStatus"),
                     "description": material.findtext("itemDescription") or material.findtext("description"),
                     "quantity": material.findtext("itemQuantity") or material.findtext("quantity"),
                     "unitPrice": material.findtext("itemUnitPrice") or material.findtext("unitPrice"),
