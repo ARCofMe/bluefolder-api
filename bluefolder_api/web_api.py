@@ -56,6 +56,40 @@ def create_app(client_factory=BlueFolderClient):
         except (BlueFolderError, ValueError) as exc:
             return jsonify({"error": str(exc)}), 502
 
+    @app.get("/items/<int:item_id>")
+    def item(item_id):
+        try:
+            client = client_factory()
+            xml_response = client.items.get(item_id)
+
+            item_node = xml_response.find(".//item")
+            if item_node is None and xml_response.tag == "item":
+                item_node = xml_response
+            if item_node is None:
+                return jsonify({"error": "item not found"}), 404
+
+            def first_text(*names):
+                for name in names:
+                    value = item_node.findtext(name)
+                    if value is not None:
+                        return value
+                return None
+
+            return jsonify({
+                "item": {
+                    "id": first_text("itemId", "id"),
+                    "itemNo": first_text("itemNo"),
+                    "description": first_text("description", "itemDescription"),
+                    "manufacturerItemNo": first_text("manufacturerItemNo", "mfrItemNo"),
+                    "manufacturerDescription": first_text("manufacturerDescription", "mfrDescription"),
+                    "manufacturerName": first_text("manufacturerName", "mfrName"),
+                    "cost": first_text("cost", "unitCost"),
+                    "price": first_text("price", "unitPrice"),
+                }
+            })
+        except (BlueFolderError, ValueError) as exc:
+            return jsonify({"error": str(exc)}), 502
+
     @app.get("/service-requests/<int:service_request_id>/materials")
     def service_request_materials(service_request_id):
         try:
