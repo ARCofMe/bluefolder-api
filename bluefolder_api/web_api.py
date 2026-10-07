@@ -130,6 +130,40 @@ def create_app(client_factory=BlueFolderClient):
         except (BlueFolderError, ValueError) as exc:
             return jsonify({"error": str(exc)}), 502
 
+    @app.get("/service-requests/<int:service_request_id>/materials/debug")
+    def service_request_materials_debug(service_request_id):
+        """Return direct fields present in each BlueFolder materialsItem."""
+        try:
+            client = client_factory()
+            xml_response = client.service_requests.get_by_id(service_request_id)
+            sr = xml_response.find(".//serviceRequest")
+            if sr is None and xml_response.tag == "serviceRequest":
+                sr = xml_response
+            if sr is None:
+                return jsonify({"error": "service request not found"}), 404
+
+            material_nodes = sr.findall("./materials/materialsItem")
+            if not material_nodes:
+                material_nodes = sr.findall(".//materials/materialsItem")
+
+            rows = []
+            for material in material_nodes:
+                fields = {}
+                for child in material:
+                    value = child.text if child.text is not None else ""
+                    if child.tag in fields:
+                        existing = fields[child.tag]
+                        if not isinstance(existing, list):
+                            fields[child.tag] = [existing]
+                        fields[child.tag].append(value)
+                    else:
+                        fields[child.tag] = value
+                rows.append(fields)
+
+            return jsonify({"serviceRequestId": str(service_request_id), "materials": rows})
+        except (BlueFolderError, ValueError) as exc:
+            return jsonify({"error": str(exc)}), 502
+
     @app.get("/assignments")
     def assignments():
         user_id = request.args.get("userId", type=int)
