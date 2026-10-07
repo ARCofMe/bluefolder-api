@@ -57,6 +57,20 @@ class FakeMaterials:
         }]
 
 
+class FakeItems:
+    def get(self, item_id):
+        import xml.etree.ElementTree as ET
+        return ET.fromstring("""<response><item>
+          <itemId>366098</itemId>
+          <itemNo>DA97-17376B</itemNo>
+          <description>Example refrigerator part</description>
+          <manufacturerItemNo>DA97-17376B</manufacturerItemNo>
+          <manufacturerDescription>Example manufacturer description</manufacturerDescription>
+          <manufacturerName>Samsung</manufacturerName>
+          <cost>75.00</cost><price>125.00</price>
+        </item></response>""")
+
+
 class FakeUsers:
     def list_all(self):
         return [{"userId": "33538043", "displayName": "David Durost", "inactive": False}]
@@ -70,7 +84,7 @@ class FakeClient:
         self.assignments = FakeAssignments()
         self.users = FakeUsers()
         self.service_requests = FakeServiceRequests()
-        self.materials = FakeMaterials()
+        self.materials = FakeMaterials()\n        self.items = FakeItems()
 
 
 def test_assignments_by_iso_date():
@@ -122,3 +136,15 @@ def test_service_request_materials():
     assert body["materials"][0]["id"] == "MAT1"
     assert body["materials"][0]["itemId"] == "ITEM1"
     assert body["materials"][0]["isBillable"] is False
+
+
+def test_item_by_id():
+    client = create_app(FakeClient).test_client()
+    response = client.get("/items/366098")
+    assert response.status_code == 200
+    item = response.get_json()["item"]
+    assert item["id"] == "366098"
+    assert item["itemNo"] == "DA97-17376B"
+    assert item["manufacturerName"] == "Samsung"
+    assert item["cost"] == "75.00"
+    assert item["price"] == "125.00"
