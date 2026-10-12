@@ -36,8 +36,15 @@ def create_app(client_factory=BlueFolderClient):
     def users():
         try:
             active_only = request.args.get("activeOnly", "false").lower() in {"1", "true", "yes"}
+            list_type = request.args.get("listType", "basic").strip().lower()
+            if list_type not in {"basic", "full"}:
+                return jsonify({"error": "listType must be 'basic' or 'full'"}), 400
             client = client_factory()
-            rows = client.users.list_active() if active_only else client.users.list_all()
+            rows = (
+                client.users.list_active(list_type=list_type)
+                if active_only
+                else client.users.list_all(list_type=list_type)
+            )
             return jsonify({"users": rows})
         except (BlueFolderError, ValueError) as exc:
             return jsonify({"error": str(exc)}), 502
