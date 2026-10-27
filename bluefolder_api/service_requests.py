@@ -569,6 +569,7 @@ class BlueFolderServiceRequests(BlueFolderBase):
         detailed_description = sr.findtext("detailedDescription")
         return {
             "id": sr.findtext("serviceRequestId") or sr.findtext("id"),
+            "linkedToServiceRequestId": sr.findtext("linkedToServiceRequestId"),
             "description": sr.findtext("description") or sr.findtext("subject"),
             "detailedDescription": detailed_description,
             "complaint": cls._extract_complaint(detailed_description),
