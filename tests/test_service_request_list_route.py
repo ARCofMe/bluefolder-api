@@ -55,3 +55,28 @@ def test_list_service_requests_rejects_invalid_windows_without_upstream_call():
         response = client.get(path)
         assert response.status_code == 400, (path, response.get_json())
     assert fake.service_requests.calls == []
+
+
+def test_list_service_requests_closed_date_window_and_status_filter():
+    fake = FakeClient()
+    response = create_app(lambda: fake).test_client().get(
+        "/service-requests?startDate=2026-11-01&endDate=2026-11-05&dateField=dateTimeClosed"
+    )
+    assert response.status_code == 200
+    assert fake.service_requests.calls[0] == {
+        "start_date": "11-01-2026 12:00 AM",
+        "end_date": "11-05-2026 11:59 PM",
+        "date_field": "dateTimeClosed",
+        "status": None,
+    }
+
+
+def test_open_filter_is_still_bounded_by_dates():
+    fake = FakeClient()
+    response = create_app(lambda: fake).test_client().get(
+        "/service-requests?startDate=2026-11-01&endDate=2026-11-05&status=open"
+    )
+    assert response.status_code == 200
+    assert fake.service_requests.calls[0]["status"] == "open"
+    assert fake.service_requests.calls[0]["start_date"] == "11-01-2026 12:00 AM"
+    assert fake.service_requests.calls[0]["end_date"] == "11-05-2026 11:59 PM"
