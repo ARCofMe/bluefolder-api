@@ -2,12 +2,13 @@
 
 import os
 import xml.etree.ElementTree as ET
-from datetime import date
+from datetime import date, timedelta
 
 from flask import Flask, jsonify, request
 
 from .client import BlueFolderClient
 from .exceptions import BlueFolderError
+from .service_requests import SUPPORTED_DATE_FIELDS
 
 
 def create_app(client_factory=BlueFolderClient):
@@ -47,6 +48,49 @@ def create_app(client_factory=BlueFolderClient):
             )
             return jsonify({"users": rows})
         except (BlueFolderError, ValueError) as exc:
+            return jsonify({"error": str(exc)}), 502
+
+    @app.get("/service-requests")
+    def list_service_requests():
+        """List service requests created (or updated on a supported date field) in a bounded window."""
+        start_raw = request.args.get("startDate", "")
+        end_raw = request.args.get("endDate", "")
+        date_field = request.args.get("dateField", "dateTimeCreated")
+        status = request.args.get("status")
+
+        try:
+            start = date.fromisoformat(start_raw)
+            end = date.fromisoformat(end_raw)
+        except ValueError:
+            return jsonify({"error": "startDate and endDate must use YYYY-MM-DD"}), 400
+
+        if end < start:
+            return jsonify({"error": "endDate must not precede startDate"}), 400
+        if end - start > timedelta(days=30):
+            return jsonify({"error": "date range must be 31 days or fewer"}), 400
+        if date_field not in SUPPORTED_DATE_FIELDS:
+            return jsonify({"error": "unsupported dateField", "supportedDateFields": sorted(SUPPORTED_DATE_FIELDS)}), 400
+
+        # BlueFolder expects local date/time strings rather than ISO calendar dates.
+        bf_start = f"{start:%Y.%m.%d} 12:00 AM"
+        bf_end = f"{end:%Y.%m.%d} 11:59 PM"
+        try:
+            client = client_factory()
+            rows = client.service_requests.list_for_range(
+                start_date=bf_start,
+                end_date=bf_end,
+                date_field=date_field,
+                status=status or None,
+            )
+            return jsonify({
+                "startDate": start_raw,
+                "endDate": end_raw,
+                "dateField": date_field,
+                "serviceRequests": rows,
+            })
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except BlueFolderError as exc:
             return jsonify({"error": str(exc)}), 502
 
     @app.get("/service-requests/<int:service_request_id>")
