@@ -6,9 +6,9 @@ class FakeServiceRequests:
     def __init__(self):
         self.calls = []
 
-    def list_for_range(self, **kwargs):
+    def list_for_range_with_filters(self, **kwargs):
         self.calls.append(kwargs)
-        return [{"id": "103476", "status": "Scheduled", "customerName": "Example"}]
+        return ([{"id": "103476", "status": "Scheduled", "customerName": "Example"}], {"dateField": "dateTimeCreated", "wasDefaulted": False, "startDate": kwargs["start_date"], "endDate": kwargs["end_date"]})
 
 
 class FakeClient:
@@ -23,9 +23,10 @@ def test_list_service_requests_converts_iso_dates_and_returns_array():
     assert response.status_code == 200
     body = response.get_json()
     assert body["serviceRequests"] == [{"id": "103476", "status": "Scheduled", "customerName": "Example"}]
+    assert body["filtersApplied"]["wasDefaulted"] is False
     assert fake.service_requests.calls == [{
-        "start_date": "2026.11.01 12:00 AM",
-        "end_date": "2026.11.05 11:59 PM",
+        "start_date": "11-01-2026 12:00 AM",
+        "end_date": "11-05-2026 11:59 PM",
         "date_field": "dateTimeCreated",
         "status": None,
     }]
