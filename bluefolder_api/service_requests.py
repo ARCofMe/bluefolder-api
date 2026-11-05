@@ -182,56 +182,66 @@ class BlueFolderServiceRequests(BlueFolderBase):
         date_field: str = "dateTimeCreated",
         status: str | None = None,
     ):
+        """List service requests using BlueFolder's documented list.aspx contract.
+
+        Dates are supplied in BlueFolder's MM-DD-YYYY HH:MM AM/PM format.
+        The legacy user-filtered helper is intentionally left unchanged.
         """
-        Retrieve all Service Requests within a given date range (no user filter).
+        rows, _ = self.list_for_range_with_filters(
+            start_date=start_date,
+            end_date=end_date,
+            date_field=date_field,
+            status=status,
+        )
+        return rows
 
-        Constructs and posts an XML request to:
-            /api/2.0/serviceRequests/list.aspx
-
-        Parameters
-        ----------
-        start_date : str
-            Start date/time of the query range (e.g. "2025.11.07 12:00 AM").
-        end_date : str
-            End date/time of the query range (e.g. "2025.11.07 11:59 PM").
-        date_field : str, optional
-            The date field to filter by. Default is "dateTimeCreated".
-        status : str, optional
-            BlueFolder service request status to filter by. Use "open" for all
-            non-closed service requests, or a tenant-specific status value.
-
-        Returns
-        -------
-        list[dict]
-            List of service request dictionaries containing:
-                - id, subject, customerId
-                - address, city, state, zip
-                - start, end
-        """
+    def list_for_range_with_filters(
+        self,
+        start_date: str,
+        end_date: str,
+        date_field: str = "dateTimeCreated",
+        status: str | None = None,
+    ):
+        """Return (rows, applied_filters) to aid validation of date-range queries."""
         start_date = self._validate_required_text(start_date, "start_date")
         end_date = self._validate_required_text(end_date, "end_date")
         date_field = self._validate_date_field(date_field, "date_field")
+        if date_field not in {"dateTimeCreated", "dateTimeClosed"}:
+            raise ValueError("service request list supports dateTimeCreated or dateTimeClosed")
         status = self._validate_optional_text(status, "status")
 
         root = ET.Element("request")
         sr_list = ET.SubElement(root, "serviceRequestList")
-
+        ET.SubElement(sr_list, "listType").text = "basic"
         date_range = ET.SubElement(sr_list, "dateRange", {"dateField": date_field})
-        # Cast to str to avoid xml serialization errors if callers pass non-string values
-        ET.SubElement(date_range, "dateRangeStart").text = str(start_date)
-        ET.SubElement(date_range, "dateRangeEnd").text = str(end_date)
+        ET.SubElement(date_range, "startDate").text = start_date
+        ET.SubElement(date_range, "endDate").text = end_date
         if status:
             ET.SubElement(sr_list, "status").text = status
 
-        xml_data = ET.tostring(root, encoding="utf-8", method="xml")
+        xml_response = self._post("list", xml_data=ET.tostring(root, encoding="utf-8"))
+        if xml_response.get("status") == "fail":
+            raise ValueError("BlueFolder rejected the service request list query")
+        result = xml_response.find("./result")
+        if result is not None and result.get("status") == "fail":
+            raise ValueError("BlueFolder service request list stream failed")
 
-        xml_response = self._post("list", xml_data=xml_data)
-        requests = []
+        rows = [
+            self._parse_service_request(sr)
+            for sr in xml_response.findall("./serviceRequestList/serviceRequest")
+        ]
+        applied = xml_response.find("./filtersApplied/dateRange")
+        filters = None
+        if applied is not None:
+            filters = {
+                "dateField": applied.get("dateField"),
+                "wasDefaulted": applied.get("wasDefaulted") == "true",
+                "startDate": applied.findtext("startDate"),
+                "endDate": applied.findtext("endDate"),
+            }
+        return rows, filters
 
-        for sr in xml_response.findall(".//serviceRequest"):
-            requests.append(self._parse_service_request(sr))
-        return requests
-
+    # -------------------------------------------------------------------------
     def list_for_status_range(
         self,
         *,

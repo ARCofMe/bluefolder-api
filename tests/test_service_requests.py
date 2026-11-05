@@ -91,7 +91,7 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
     response = ET.fromstring(
         """
         <response status="ok">
-          <serviceRequests>
+          <serviceRequestList>
             <serviceRequest>
               <id>123</id>
               <subject>Test SR</subject>
@@ -118,7 +118,7 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
                 <userId>9002</userId>
               </assignedTo>
             </serviceRequest>
-          </serviceRequests>
+          </serviceRequestList>
         </response>
         """
     )
@@ -165,7 +165,7 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
 
 
 def test_list_for_status_range_builds_bounded_status_filter(sr, monkeypatch):
-    response = ET.fromstring("<response status='ok'><serviceRequests /></response>")
+    response = ET.fromstring("<response status='ok'><serviceRequestList /></response>")
     calls = []
 
     def fake_post(action, xml_data=None):
@@ -259,3 +259,67 @@ def test_parse_service_request_exposes_fielddesk_equipment_projection():
     assert row["modelNumber"] == "GTD48EAS0WWB"
     assert row["serialNumber"] == "RA874021C"
     assert row["complaint"] == "NO POWER"
+
+
+def test_global_list_matches_documented_bluefolder_xml(sr, monkeypatch):
+    calls = []
+
+    def fake_post(action, xml_data=None):
+        calls.append((action, ET.fromstring(xml_data)))
+        return ET.fromstring("""
+          <response status="ok">
+            <serviceRequestList>
+              <serviceRequest>
+                <serviceRequestId>103476</serviceRequestId>
+                <description>Refrigerator not cooling</description>
+                <status>Open</status>
+                <customerName>Example Customer</customerName>
+              </serviceRequest>
+            </serviceRequestList>
+            <filtersApplied>
+              <dateRange dateField="dateTimeCreated" wasDefaulted="false">
+                <startDate>11-01-2026 12:00 AM</startDate>
+                <endDate>11-05-2026 11:59 PM</endDate>
+              </dateRange>
+            </filtersApplied>
+          </response>
+        """)
+
+    monkeypatch.setattr(sr, "_post", fake_post)
+    rows, filters = sr.list_for_range_with_filters(
+        "11-01-2026 12:00 AM", "11-05-2026 11:59 PM", status="open"
+    )
+    assert len(rows) == 1
+    assert rows[0]["id"] == "103476"
+    assert filters == {
+        "dateField": "dateTimeCreated",
+        "wasDefaulted": False,
+        "startDate": "11-01-2026 12:00 AM",
+        "endDate": "11-05-2026 11:59 PM",
+    }
+    action, xml = calls[0]
+    assert action == "list"
+    node = xml.find("./serviceRequestList")
+    assert node.findtext("listType") == "basic"
+    assert node.findtext("status") == "open"
+    dr = node.find("dateRange")
+    assert dr.attrib["dateField"] == "dateTimeCreated"
+    assert dr.findtext("startDate") == "11-01-2026 12:00 AM"
+    assert dr.findtext("endDate") == "11-05-2026 11:59 PM"
+    assert dr.find("dateRangeStart") is None
+    assert dr.find("dateRangeEnd") is None
+
+
+def test_global_list_rejects_undocumented_date_fields(sr):
+    with pytest.raises(ValueError, match="supports dateTimeCreated or dateTimeClosed"):
+        sr.list_for_range("11-01-2026 12:00 AM", "11-05-2026 11:59 PM", date_field="dateTimeScheduled")
+
+
+def test_global_list_rejects_failed_bluefolder_result(sr, monkeypatch):
+    monkeypatch.setattr(sr, "_post", lambda action, xml_data=None: ET.fromstring(
+        '<response status="ok" streamed="true"><serviceRequestList />'
+        '<result status="fail"><message>Incomplete response</message></result></response>'
+    ))
+    with pytest.raises(ValueError, match="stream failed"):
+        sr.list_for_range("11-01-2026 12:00 AM", "11-05-2026 11:59 PM")
+
