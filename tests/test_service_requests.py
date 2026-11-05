@@ -91,7 +91,7 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
     response = ET.fromstring(
         """
         <response status="ok">
-          <serviceRequests>
+          <serviceRequestList>
             <serviceRequest>
               <id>123</id>
               <subject>Test SR</subject>
@@ -118,7 +118,7 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
                 <userId>9002</userId>
               </assignedTo>
             </serviceRequest>
-          </serviceRequests>
+          </serviceRequestList>
         </response>
         """
     )
@@ -165,7 +165,7 @@ def test_list_for_range_includes_status_fields(sr, monkeypatch):
 
 
 def test_list_for_status_range_builds_bounded_status_filter(sr, monkeypatch):
-    response = ET.fromstring("<response status='ok'><serviceRequests /></response>")
+    response = ET.fromstring("<response status='ok'><serviceRequestList /></response>")
     calls = []
 
     def fake_post(action, xml_data=None):
