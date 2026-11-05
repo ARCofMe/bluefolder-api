@@ -72,11 +72,11 @@ def create_app(client_factory=BlueFolderClient):
             return jsonify({"error": "unsupported dateField", "supportedDateFields": sorted(SUPPORTED_DATE_FIELDS)}), 400
 
         # BlueFolder expects local date/time strings rather than ISO calendar dates.
-        bf_start = f"{start:%Y.%m.%d} 12:00 AM"
-        bf_end = f"{end:%Y.%m.%d} 11:59 PM"
+        bf_start = f"{start:%m-%d-%Y} 12:00 AM"
+        bf_end = f"{end:%m-%d-%Y} 11:59 PM"
         try:
             client = client_factory()
-            rows = client.service_requests.list_for_range(
+            rows, filters_applied = client.service_requests.list_for_range_with_filters(
                 start_date=bf_start,
                 end_date=bf_end,
                 date_field=date_field,
@@ -87,6 +87,7 @@ def create_app(client_factory=BlueFolderClient):
                 "endDate": end_raw,
                 "dateField": date_field,
                 "serviceRequests": rows,
+                "filtersApplied": filters_applied,
             })
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
