@@ -5,6 +5,7 @@ import os
 import logging
 import xml.etree.ElementTree as ET
 from abc import ABC
+from .diagnostics import response_error_details
 import base64
 import time
 from urllib.parse import urlparse
@@ -274,17 +275,6 @@ class BlueFolderBase(ABC):
             return True
         return os.getenv("BLUEFOLDER_RETRY_MUTATIONS", "").lower() in {"1", "true", "yes"}
 
-    @staticmethod
-    def _response_snippet(response) -> str:
-        text = getattr(response, "text", None)
-        if text is None:
-            content = getattr(response, "content", b"")
-            if isinstance(content, bytes):
-                text = content[:500].decode("utf-8", errors="replace")
-            else:
-                text = str(content)
-        return str(text).strip()[:500]
-
     def _build_request_url(self, action: str, override_url: str | None = None) -> str:
         return override_url or f"{self.base_url.rstrip('/')}/{self.domain}/{action}.aspx"
 
@@ -305,14 +295,20 @@ class BlueFolderBase(ABC):
         )
 
         status = getattr(response, "status_code", None)
-        snippet = self._response_snippet(response)
-        message = f"BlueFolder HTTP {status} for {url}: {snippet}".strip()
+        diagnostics = {"httpStatus": status, **response_error_details(response)}
+        logger.warning("BlueFolder upstream HTTP failure", extra={"bluefolder_error": diagnostics})
+        message = f"BlueFolder HTTP {status}"
+        # Attach only sanitized diagnostics, retaining existing exception types.
+        def failure(error_type, **kwargs):
+            error = error_type(message, status_code=status, url=url, **kwargs)
+            error.diagnostics = diagnostics
+            return error
         if status in (401, 403):
-            raise BlueFolderAuthError(message, status_code=status, url=url)
+            raise failure(BlueFolderAuthError)
         if status == 404:
             if url.endswith(".aspx"):
-                raise BlueFolderUnsupportedEndpointError(message, status_code=status, url=url)
-            raise BlueFolderNotFoundError(message, status_code=status, url=url)
+                raise failure(BlueFolderUnsupportedEndpointError)
+            raise failure(BlueFolderNotFoundError)
         if status == 429:
             retry_after = None
             headers = getattr(response, "headers", {}) or {}
@@ -320,13 +316,10 @@ class BlueFolderBase(ABC):
                 retry_after = float(headers.get("Retry-After")) if headers.get("Retry-After") else None
             except Exception:
                 retry_after = None
-            raise BlueFolderRateLimitError(
-                message,
-                status_code=status,
-                url=url,
+            raise failure(BlueFolderRateLimitError,
                 retry_after=retry_after,
             )
-        raise BlueFolderRequestError(message, status_code=status, url=url)
+        raise failure(BlueFolderRequestError)
 
     def _perform_request(self, url: str, payload, headers: dict[str, str], action: str):
         request_id = next(_REQUEST_COUNTER)
@@ -336,15 +329,7 @@ class BlueFolderBase(ABC):
         last_response = None
 
         for attempt in range(1, attempts + 1):
-            payload_preview = payload.decode() if isinstance(payload, (bytes, bytearray)) else str(payload)
-            logger.debug(
-                "BlueFolder request id=%s attempt=%s action=%s url=%s payload=%s",
-                request_id,
-                attempt,
-                action,
-                url,
-                payload_preview,
-            )
+            logger.debug("BlueFolder request id=%s attempt=%s", request_id, attempt)
             started = time.monotonic()
             response = self.session.post(
                 url,
@@ -357,14 +342,9 @@ class BlueFolderBase(ABC):
             except Exception:
                 self.session.last_response_headers = {}
             elapsed_ms = int((time.monotonic() - started) * 1000)
+            logger.debug("BlueFolder response id=%s status=%s duration_ms=%s",
+                         request_id, getattr(response, "status_code", None), elapsed_ms)
             last_response = response
-            logger.debug(
-                "BlueFolder response id=%s status=%s duration_ms=%s body=%s",
-                request_id,
-                getattr(response, "status_code", "n/a"),
-                elapsed_ms,
-                self._response_snippet(response),
-            )
             if getattr(response, "status_code", None) == 200:
                 return response
 
@@ -381,9 +361,9 @@ class BlueFolderBase(ABC):
                     retry_after = None
                 sleep_for = retry_after if retry_after is not None else retry_backoff * attempt
                 logger.warning(
-                    "BlueFolder transient HTTP %s for %s, retrying in %.2fs (%s/%s).",
+                    "BlueFolder transient HTTP %s, retrying action %s in %.2fs (%s/%s).",
                     getattr(response, "status_code", "n/a"),
-                    url,
+                    action,
                     sleep_for,
                     attempt,
                     attempts - 1,
@@ -391,7 +371,6 @@ class BlueFolderBase(ABC):
                 time.sleep(sleep_for)
                 continue
 
-            logger.error("Error %s: %s", getattr(response, "status_code", "n/a"), self._response_snippet(response))
             self._raise_http_error(response, url)
 
         self._raise_http_error(last_response, url)
@@ -476,7 +455,6 @@ class BlueFolderBase(ABC):
             try:
                 return ET.fromstring(response.content)
             except ET.ParseError as e:
-                resp_headers = getattr(response, "headers", {}) or {}
                 resp_text = getattr(response, "text", "")
                 resp_status = getattr(response, "status_code", "n/a")
                 is_empty_response = not str(resp_text).strip()
@@ -484,10 +462,8 @@ class BlueFolderBase(ABC):
 
                 if should_retry:
                     logger.warning(
-                        "Invalid XML from %s (status=%s, headers=%s), retrying empty response (%s/%s).",
-                        url,
+                        "Invalid XML (status=%s), retrying empty response (%s/%s).",
                         resp_status,
-                        dict(resp_headers),
                         attempt + 1,
                         empty_retry_total,
                     )
@@ -495,8 +471,8 @@ class BlueFolderBase(ABC):
                     response = self._perform_request(url, xml_data, hdrs, action)
                     continue
 
-                log_message = "Invalid XML from %s (status=%s, headers=%s):\n%s"
-                log_args = (url, resp_status, dict(resp_headers), resp_text)
+                log_message = "Invalid XML (status=%s)"
+                log_args = (resp_status,)
                 if is_empty_response:
                     logger.warning(*((log_message,) + log_args))
                 else:
@@ -531,7 +507,6 @@ class BlueFolderBase(ABC):
         """
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
         headers = self._auth_headers()
-        logger.debug(f"POST → {url}\n{xml_body}")
 
         response = self._perform_request(url, xml_body.encode("utf-8"), headers, endpoint)
         return response.text
@@ -563,3 +538,4 @@ class BlueFolderBase(ABC):
     # def delete(self, params: dict):
     #     """Perform a standard `delete` operation."""
     #     return self._post("delete", params=params)
+
