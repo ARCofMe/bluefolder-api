@@ -36,3 +36,30 @@ BlueFolder's documented list date fields do **not** include a general last-modif
 ## Future enhancement
 
 Consider a dedicated reconciliation workflow with a persisted window cursor, known-ticket refresh, run metrics, and retry handling. Do not increase the facade's 31-day limit merely because upstream documentation permits larger windows; review operational cost and pagination/response size first.
+
+
+## List-query error diagnostics
+
+XML `response status="fail"` and trailing `result status="fail"` previously
+became generic ValueErrors, discarding upstream error fields. They now retain
+sanitized `upstreamError` fields in JSON (HTTP 400, as before). HTTP transport
+failures remain HTTP 502 in the facade and include `httpStatus` when available.
+Local date validation remains HTTP 400. Success schemas, date conversion, filters,
+and retry rules are unchanged.
+
+Structured warning records carry a `bluefolder_error` dictionary. The shared
+transport no longer logs raw request/response bodies, response headers, or URLs
+in failure messages. Only short numeric error codes and an explicit set of
+reviewed generic messages in `bluefolder_api/diagnostics.py` are retained from
+error envelopes. Unknown text becomes `Upstream message withheld`; unsupported
+codes are omitted. Malformed, non-XML, DTD-bearing, or oversized HTTP error bodies
+produce no XML details. This intentionally sacrifices unknown free-text detail
+to avoid leaking credentials or customer data. Do not enable raw payload logging
+to fill that gap; add reviewed generic messages/shapes with regression tests.
+
+The reported November 1–5 and November 5 successes, and November 6/ranges starting
+November 6 failures, do not establish a date-format or timezone defect. No actual
+upstream error for that incident has been examined. After deployment through the
+normal review process, compare the sanitized code/message for the failing window
+with a successful window. An unfamiliar envelope or withheld message may require
+secure investigation with BlueFolder support before expanding the allowlist.

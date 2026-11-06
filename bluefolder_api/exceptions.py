@@ -44,3 +44,11 @@ class BlueFolderUnsupportedEndpointError(BlueFolderNotFoundError):
 class BlueFolderInvalidResponseError(BlueFolderError):
     """Raised when BlueFolder returns malformed or unexpected payloads."""
 
+
+
+class BlueFolderQueryError(BlueFolderRequestError, ValueError):
+    """An XML-level list rejection (also a ValueError for compatibility)."""
+
+    def __init__(self, message, *, diagnostics):
+        super().__init__(message)
+        self.diagnostics = diagnostics

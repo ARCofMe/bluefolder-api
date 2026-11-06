@@ -1,5 +1,9 @@
 """BlueFolder service request listing helpers."""
 
+import logging
+from .diagnostics import error_details
+from .exceptions import BlueFolderQueryError
+
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
 
@@ -195,6 +199,12 @@ class BlueFolderServiceRequests(BlueFolderBase):
         )
         return rows
 
+    @staticmethod
+    def _raise_list_error(root, message):
+        details = error_details(root)
+        logging.getLogger(__name__).warning(message, extra={"bluefolder_error": details})
+        raise BlueFolderQueryError(message, diagnostics=details)
+
     def list_for_range_with_filters(
         self,
         start_date: str,
@@ -221,10 +231,10 @@ class BlueFolderServiceRequests(BlueFolderBase):
 
         xml_response = self._post("list", xml_data=ET.tostring(root, encoding="utf-8"))
         if xml_response.get("status") == "fail":
-            raise ValueError("BlueFolder rejected the service request list query")
+            self._raise_list_error(xml_response, "BlueFolder rejected the service request list query")
         result = xml_response.find("./result")
         if result is not None and result.get("status") == "fail":
-            raise ValueError("BlueFolder service request list stream failed")
+            self._raise_list_error(xml_response, "BlueFolder service request list stream failed")
 
         rows = [
             self._parse_service_request(sr)
@@ -628,3 +638,4 @@ class BlueFolderServiceRequests(BlueFolderBase):
                 if value:
                     return str(value)
         return None
+
