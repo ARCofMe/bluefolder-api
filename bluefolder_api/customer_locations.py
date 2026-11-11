@@ -2,6 +2,7 @@
 
 import xml.etree.ElementTree as ET
 from .base import BlueFolderBase
+from .exceptions import BlueFolderInvalidResponseError, BlueFolderRequestError
 
 
 class BlueFolderCustomerLocations(BlueFolderBase):
@@ -82,7 +83,7 @@ class BlueFolderCustomerLocations(BlueFolderBase):
         Retrieve a single customer location by ID.
 
         Constructs and posts an XML request to:
-            /api/2.0/customer/getLocation.aspx
+            /api/2.0/customers/getLocation.aspx
 
         Parameters
         ----------
@@ -97,14 +98,22 @@ class BlueFolderCustomerLocations(BlueFolderBase):
         location_id = self._validate_positive_id(location_id, "location_id")
         root = ET.Element("request")
         loc_get = ET.SubElement(root, "customerLocationGet")
-        ET.SubElement(loc_get, "id").text = str(location_id)
+        ET.SubElement(loc_get, "customerLocationId").text = str(location_id)
         xml_data = ET.tostring(root, encoding="utf-8", method="xml")
 
-        xml_response = self._post("getLocation", xml_data=xml_data)
+        xml_response = self._post(
+            "getLocation",
+            xml_data=xml_data,
+            override_url=f"{self.base_url}/customers/getLocation.aspx",
+        )
+        if xml_response.tag != "response" or xml_response.get("status") != "ok":
+            raise BlueFolderRequestError("BlueFolder customer location request failed")
         loc = xml_response.find(".//customerLocation")
         if loc is None:
             return {}
 
+        if loc.findtext("customerLocationId") != str(location_id):
+            raise BlueFolderInvalidResponseError("BlueFolder returned an unexpected customer location ID")
         return self._parse_location(loc)
 
     # -------------------------------------------------------------------------
@@ -209,9 +218,13 @@ class BlueFolderCustomerLocations(BlueFolderBase):
             "city": city,
             "state": state,
             "zip": zip_code,
+            "country": loc.findtext("addressCountry") or "",
             "formattedAddress": ", ".join(part for part in [address, locality] if part),
             "notes": loc.findtext("locationNotes") or "",
             "zone": loc.findtext("zone") or "",
+            "phone": loc.findtext("phone") or "",
+            "primaryContactId": loc.findtext("primaryContactId"),
             "serviceManagerId": loc.findtext("serviceManagerId"),
             "technicianId": loc.findtext("technicianId"),
         }
+

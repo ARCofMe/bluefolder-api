@@ -72,10 +72,10 @@ class FakeItems:
 
 
 class FakeUsers:
-    def list_all(self):
+    def list_all(self, list_type="basic"):
         return [{"userId": "33538043", "displayName": "David Durost", "inactive": False}]
 
-    def list_active(self):
+    def list_active(self, list_type="basic"):
         return self.list_all()
 
 
@@ -84,7 +84,8 @@ class FakeClient:
         self.assignments = FakeAssignments()
         self.users = FakeUsers()
         self.service_requests = FakeServiceRequests()
-        self.materials = FakeMaterials()\n        self.items = FakeItems()
+        self.materials = FakeMaterials()
+        self.items = FakeItems()
 
 
 def test_assignments_by_iso_date():
@@ -148,3 +149,4 @@ def test_item_by_id():
     assert item["manufacturerName"] == "Samsung"
     assert item["cost"] == "75.00"
     assert item["price"] == "125.00"
+

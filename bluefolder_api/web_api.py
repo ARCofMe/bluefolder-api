@@ -111,6 +111,26 @@ def create_app(client_factory=BlueFolderClient):
         except (BlueFolderError, ValueError) as exc:
             return jsonify({"error": str(exc)}), 502
 
+    @app.get("/customer-locations/<location_id>")
+    def customer_location(location_id):
+        """Read one location, including its original BlueFolder zone text."""
+        if not location_id.isascii() or not location_id.isdecimal():
+            return jsonify({"error": "locationId must be a positive integer"}), 400
+        try:
+            parsed_location_id = int(location_id)
+        except ValueError:
+            return jsonify({"error": "locationId must be a positive integer"}), 400
+        if parsed_location_id <= 0:
+            return jsonify({"error": "locationId must be a positive integer"}), 400
+        try:
+            client = client_factory()
+            location = client.customer_locations.get_location(parsed_location_id)
+            if not location:
+                return jsonify({"error": "customer location not found"}), 404
+            return jsonify({"customerLocation": location})
+        except (BlueFolderError, ValueError):
+            return jsonify({"error": "BlueFolder customer location retrieval failed"}), 502
+
     @app.get("/items/<int:item_id>")
     def item(item_id):
         try:
@@ -270,4 +290,5 @@ def create_app(client_factory=BlueFolderClient):
 
 
 app = create_app()
+
 
