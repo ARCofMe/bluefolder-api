@@ -64,7 +64,7 @@ def test_location_add_edit_delete_xml():
 
 def test_location_reads_include_formatted_address_and_boolean_primary(monkeypatch):
     locations = BlueFolderCustomerLocations(client=DummyClient())
-    root = ET.Element("response")
+    root = ET.Element("response", status="ok")
     loc = ET.SubElement(root, "customerLocation")
     ET.SubElement(loc, "customerLocationId").text = "9"
     ET.SubElement(loc, "customerId").text = "42"
@@ -124,3 +124,4 @@ def test_contact_get_skips_repeated_calls_after_missing_endpoint(monkeypatch):
 
     assert contacts.get_by_id(10) == {}
     assert contacts.get_by_id(10) == {}
+
