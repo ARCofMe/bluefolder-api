@@ -230,11 +230,27 @@ class BlueFolderServiceRequests(BlueFolderBase):
             ET.SubElement(sr_list, "status").text = status
 
         xml_response = self._post("list", xml_data=ET.tostring(root, encoding="utf-8"))
-        if xml_response.get("status") == "fail":
-            self._raise_list_error(xml_response, "BlueFolder rejected the service request list query")
         result = xml_response.find("./result")
-        if result is not None and result.get("status") == "fail":
-            self._raise_list_error(xml_response, "BlueFolder service request list stream failed")
+        failed = xml_response.get("status") == "fail" or (
+            result is not None and result.get("status") == "fail"
+        )
+        if failed:
+            # A filtered empty list can arrive as an application-level 404.
+            # Never confuse that with an HTTP 404 or assume every 404 is empty.
+            details = error_details(xml_response)
+            if status and status.casefold() == "open" and details.get("code") == "404":
+                check_rows, check_filters = self.list_for_range_with_filters(
+                    start_date=start_date,
+                    end_date=end_date,
+                    date_field=date_field,
+                    status=None,
+                )
+                if all(
+                    str(row.get("statusName") or row.get("status") or "").strip().casefold() == "closed"
+                    for row in check_rows
+                ):
+                    return [], check_filters
+            message = ("BlueFolder rejected the service request list query"\n                       if xml_response.get("status") == "fail"\n                       else "BlueFolder service request list stream failed")\n            self._raise_list_error(xml_response, message)
 
         rows = [
             self._parse_service_request(sr)
