@@ -323,3 +323,40 @@ def test_global_list_rejects_failed_bluefolder_result(sr, monkeypatch):
     with pytest.raises(ValueError, match="stream failed"):
         sr.list_for_range("11-01-2026 12:00 AM", "11-05-2026 11:59 PM")
 
+
+
+@pytest.mark.parametrize("statuses,should_succeed", [
+    (["Closed", "Closed"], True),
+    ([], True),
+    (["Scheduled"], False),
+    ([""], False),
+])
+def test_open_404_requires_verified_empty_nonclosed_window(sr, monkeypatch, statuses, should_succeed):
+    from bluefolder_api.exceptions import BlueFolderQueryError
+    error = ET.fromstring('<response status="fail"><error><code>404</code><message>Unknown upstream message</message></error></response>')
+    success = ET.Element("response", status="ok")
+    listing = ET.SubElement(success, "serviceRequestList")
+    for status in statuses:
+        row = ET.SubElement(listing, "serviceRequest")
+        ET.SubElement(row, "status").text = status
+    calls = []
+    def post(action, xml_data):
+        calls.append(ET.fromstring(xml_data))
+        return error if len(calls) == 1 else success
+    monkeypatch.setattr(sr, "_post", post)
+    if should_succeed:
+        assert sr.list_for_range("05-18-2026 12:00 AM", "06-16-2026 11:59 PM", status="open") == []
+    else:
+        with pytest.raises(BlueFolderQueryError):
+            sr.list_for_range("05-18-2026 12:00 AM", "06-16-2026 11:59 PM", status="open")
+    assert len(calls) == 2
+    assert calls[0].findtext("./serviceRequestList/status") == "open"
+    assert calls[1].find("./serviceRequestList/status") is None
+
+
+def test_unfiltered_404_is_not_hidden(sr, monkeypatch):
+    from bluefolder_api.exceptions import BlueFolderQueryError
+    monkeypatch.setattr(sr, "_post", lambda *a, **kw: ET.fromstring(
+        '<response status="fail"><error><code>404</code></error></response>'))
+    with pytest.raises(BlueFolderQueryError):
+        sr.list_for_range("05-18-2026 12:00 AM", "06-16-2026 11:59 PM")
