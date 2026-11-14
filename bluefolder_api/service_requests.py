@@ -250,7 +250,10 @@ class BlueFolderServiceRequests(BlueFolderBase):
                     for row in check_rows
                 ):
                     return [], check_filters
-            message = ("BlueFolder rejected the service request list query"\n                       if xml_response.get("status") == "fail"\n                       else "BlueFolder service request list stream failed")\n            self._raise_list_error(xml_response, message)
+            message = ("BlueFolder rejected the service request list query"
+                       if xml_response.get("status") == "fail"
+                       else "BlueFolder service request list stream failed")
+            self._raise_list_error(xml_response, message)
 
         rows = [
             self._parse_service_request(sr)
